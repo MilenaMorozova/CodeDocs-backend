@@ -7,6 +7,7 @@ auth_backend = AuthBackend()
 # TODO check availability all necessary fields
 # TODO create logger
 def sign_up(request):
+    print(request.GET)
     try:
         auth_backend.create_user(username=request.GET['username'],
                                 email=request.GET['email'],
