@@ -4,6 +4,11 @@ class AuthenticationException(Exception):
         self.response_status = response_status
 
 
+class BadRequestTypeException(AuthenticationException):
+    def __init__(self):
+        super().__init__("Bad request type", 400)
+
+
 class FieldNotGivenException(AuthenticationException):
     def __init__(self, field_name):
         super().__init__(f"{field_name} not given", 400)
@@ -24,6 +29,6 @@ class UserDoesNotExistException(AuthenticationException):
         super().__init__("User does not exist", 404)
 
 
-# class UserAlreadyExistException(AuthenticationException):
-#     def __init__(self):
-#         super().__init__("This user already exist", 400)
+class UserAlreadyExistException(AuthenticationException):
+    def __init__(self):
+        super().__init__("This user already exist", 400)

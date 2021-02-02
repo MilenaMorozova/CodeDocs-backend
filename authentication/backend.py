@@ -1,15 +1,20 @@
 from django.db.models import Q
 from django.contrib.auth.backends import AllowAllUsersModelBackend
+from django.db.utils import IntegrityError
 
 from authentication.models import CustomUser
+from .exceptions import UserAlreadyExistException, UserDoesNotExistException
 
 
 class AuthBackend(AllowAllUsersModelBackend):
-    def create_user(self, username, email, password) -> CustomUser or str:
-        user = CustomUser.objects.create_user(username=username,
-                                              email=email,
-                                              password=password)
-        return user
+    def create_user(self, username, email, password) -> CustomUser:
+        try:
+            user = CustomUser.objects.create_user(username=username,
+                                                  email=email,
+                                                  password=password)
+            return user
+        except IntegrityError:
+            raise UserAlreadyExistException()
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         try:
@@ -18,10 +23,10 @@ class AuthBackend(AllowAllUsersModelBackend):
             if user.check_password(password):
                 return user
         except CustomUser.DoesNotExist:
-            return None
+            raise UserDoesNotExistException()
 
     def get_user(self, user_id):
         try:
             return CustomUser.objects.get(pk=user_id)
         except CustomUser.DoesNotExist:
-            return None
+            raise UserDoesNotExistException()
