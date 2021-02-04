@@ -19,7 +19,7 @@ class IllegalFieldException(AuthenticationException):
         super().__init__(f"{field_name} is incorrect", 406)
 
 
-class FieldIsNotUniqueException(AuthenticationException):
+class NotUniqueFieldException(AuthenticationException):
     def __init__(self, field_name):
         super().__init__(f"This {field_name} is already in use", 409)
 

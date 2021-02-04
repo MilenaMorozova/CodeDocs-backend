@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from authentication.backend import AuthBackend
 from authentication.models import CustomUser
-from authentication.exceptions import UserAlreadyExistException, FieldIsNotUniqueException
+from authentication.exceptions import UserAlreadyExistException, NotUniqueFieldException
 
 
 class CreateUser(TestCase):
@@ -82,7 +82,7 @@ class CheckUsername(TestCase):
         email = 'masht@mail.ru'
         password = '12345'
         self.auth_backend.create_user(username, email, password)
-        with self.assertRaises(FieldIsNotUniqueException):
+        with self.assertRaises(NotUniqueFieldException):
             self.auth_backend.is_correct_username(username)
 
 
@@ -100,5 +100,5 @@ class CheckEmail(TestCase):
         email = 'masht@mail.ru'
         password = '12345'
         self.auth_backend.create_user(username, email, password)
-        with self.assertRaises(FieldIsNotUniqueException):
+        with self.assertRaises(NotUniqueFieldException):
             self.auth_backend.is_correct_email(email)

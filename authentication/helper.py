@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 import datetime
 
 
-def catch_view_exception(required_request_fields: tuple, logger):
+def catch_view_exception(required_request_fields: tuple or list, logger):
     def decorator(func):
         def wrap(request):
             # check type of request

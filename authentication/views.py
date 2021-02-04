@@ -8,8 +8,8 @@ from .exceptions import AuthenticationException
 auth_backend = AuthBackend()
 
 
-@catch_view_exception(('username'), auth_logger)
-def check_username_for_uniqueness(username, **kwargs):
+@catch_view_exception(['username'], auth_logger)
+def check_username(username, **kwargs):
     try:
         auth_backend.is_correct_username(username)
         return HttpResponse(200)
@@ -17,10 +17,10 @@ def check_username_for_uniqueness(username, **kwargs):
         return HttpResponse(content=e.message, status=e.response_status)
 
 
-@catch_view_exception(('email'), auth_logger)
-def check_email_for_uniqueness(email, **kwargs):
+@catch_view_exception(['email'], auth_logger)
+def check_email(email, **kwargs):
     try:
-        auth_backend.is_correct_username(email)
+        auth_backend.is_correct_email(email)
         return HttpResponse(200)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)
