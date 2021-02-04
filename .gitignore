@@ -84,7 +84,7 @@ venv.bak/
 
 # my configs
 CodeDocs_backend/config_postgresql.py
-tests.py
+for_me.py
 
 # idea
 .idea/

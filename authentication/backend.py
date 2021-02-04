@@ -3,7 +3,7 @@ from django.contrib.auth.backends import AllowAllUsersModelBackend
 from django.db.utils import IntegrityError
 
 from authentication.models import CustomUser
-from .exceptions import UserAlreadyExistException, UserDoesNotExistException
+from .exceptions import UserAlreadyExistException, FieldIsNotUniqueException
 
 
 class AuthBackend(AllowAllUsersModelBackend):
@@ -23,10 +23,22 @@ class AuthBackend(AllowAllUsersModelBackend):
             if user.check_password(password):
                 return user
         except CustomUser.DoesNotExist:
-            raise UserDoesNotExistException()
+            # raise UserDoesNotExistException()
+            return None
 
     def get_user(self, user_id):
         try:
             return CustomUser.objects.get(pk=user_id)
         except CustomUser.DoesNotExist:
-            raise UserDoesNotExistException()
+            # raise UserDoesNotExistException()
+            return None
+
+    def is_correct_username(self, username):
+        if CustomUser.objects.filter(username=username).exists():
+            raise FieldIsNotUniqueException('username')
+        return True
+
+    def is_correct_email(self, email):
+        if CustomUser.objects.filter(email=email).exists():
+            raise FieldIsNotUniqueException('email')
+        return True

@@ -1,8 +1,6 @@
 import traceback
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 import datetime
-
-from authentication.exceptions import BadRequestTypeException, FieldNotGivenException
 
 
 def catch_view_exception(required_request_fields: tuple, logger):
@@ -11,7 +9,7 @@ def catch_view_exception(required_request_fields: tuple, logger):
             # check type of request
             if request.method not in ['GET', 'POST']:
                 logger.error(f"bad type_request = {request.method}")
-                raise BadRequestTypeException()
+                return HttpResponseBadRequest("Bad request type")
 
             # check necessary fields in request
             request_dict = getattr(request, request.method).dict()
@@ -20,7 +18,7 @@ def catch_view_exception(required_request_fields: tuple, logger):
                     request_dict[field]
                 except KeyError:
                     logger.error(f"{field} is empty field")
-                    raise FieldNotGivenException(field)
+                    return HttpResponseBadRequest(f"{field} not given")
 
             # catch server exceptions
             try:
