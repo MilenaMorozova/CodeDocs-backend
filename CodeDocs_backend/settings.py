@@ -29,7 +29,8 @@ SECRET_KEY = 'd6cspfpj##7p%v25--_qqz*%nr!84)r5p*p1v@0rgl#^ys!i!@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['26.158.8.9:8000',
+                 '26.158.8.9']
 
 # Application definition
 
@@ -64,7 +65,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_SECURE = True
 
 CORS_ORIGIN_WHITELIST = (
-       'http://localhost:8000',
+    'http://26.158.8.9:8000',
+    'http://localhost:8000',
 )
 
 ROOT_URLCONF = 'CodeDocs_backend.urls'

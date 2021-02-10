@@ -61,9 +61,11 @@ class CreateUser(TestCase):
     def test_password_exist(self):
         fst_username, fst_email, fst_password = 'Igor Mashtakov', 'masht@mail.ru', '12345'
         snd_username, snd_email, snd_password = 'Igor Mashtov', 'mas@mail.ru', '12345'
+
         self.auth_backend.create_user(fst_username, fst_email, fst_password)
         fst_user = CustomUser.objects.get(username=fst_username, email=fst_email)
         self.assertTrue(fst_user.check_password(fst_password))
+
         self.auth_backend.create_user(snd_username, snd_email, snd_password)
         snd_user = CustomUser.objects.get(username=snd_username, email=snd_email)
         self.assertTrue(snd_user.check_password(snd_password))
