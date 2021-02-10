@@ -1,6 +1,6 @@
 import logging
 import os
-from helpers.directory_name import BASE_DIR
+from CodeDocs_backend.settings import BASE_DIR
 
 LOGGER_FORMATTER = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 

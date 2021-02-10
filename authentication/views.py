@@ -1,4 +1,7 @@
 from django.http import HttpResponse
+from rest_framework.decorators import api_view
+from rest_framework import status
+from django.views.decorators.csrf import csrf_exempt
 
 from authentication.backend import AuthBackend
 from .helper import catch_view_exception
@@ -8,31 +11,23 @@ from .exceptions import AuthenticationException
 auth_backend = AuthBackend()
 
 
+@csrf_exempt
+@api_view(['POST'])
 @catch_view_exception(['username'], auth_logger)
-def check_username(username, **kwargs):
+def check_username(request):
     try:
-        auth_backend.is_correct_username(username)
-        return HttpResponse(200)
+        auth_backend.is_correct_username(request.data['username'])
+        return HttpResponse(status=status.HTTP_200_OK)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)
 
 
+@csrf_exempt
+@api_view(['POST'])
 @catch_view_exception(['email'], auth_logger)
-def check_email(email, **kwargs):
+def check_email(request):
     try:
-        auth_backend.is_correct_email(email)
-        return HttpResponse(200)
-    except AuthenticationException as e:
-        return HttpResponse(content=e.message, status=e.response_status)
-
-
-@catch_view_exception(('username', 'email', 'password'), auth_logger)
-def sign_up(username, email, password, **kwargs):
-    try:
-        auth_backend.create_user(username=username,
-                                 email=email,
-                                 password=password)
-
-        return HttpResponse(status=201)
+        auth_backend.is_correct_email(request.data['email'])
+        return HttpResponse(status=status.HTTP_200_OK)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)

@@ -3,7 +3,7 @@ from django.contrib.auth.backends import AllowAllUsersModelBackend
 from django.db.utils import IntegrityError
 
 from authentication.models import CustomUser
-from .exceptions import UserAlreadyExistException, NotUniqueFieldException
+from .exceptions import UserAlreadyExistException, NotUniqueFieldException, UserDoesNotExistException
 
 
 class AuthBackend(AllowAllUsersModelBackend):
@@ -23,8 +23,8 @@ class AuthBackend(AllowAllUsersModelBackend):
             if user.check_password(password):
                 return user
         except CustomUser.DoesNotExist:
-            # raise UserDoesNotExistException()
-            return None
+            raise UserDoesNotExistException()
+            # return None
 
     def get_user(self, user_id):
         try:
