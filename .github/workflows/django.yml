@@ -2,7 +2,7 @@ name: Django CI
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [ authentication, develop, main ]
   pull_request:
     branches: [ authentication, develop, main ]
 
@@ -28,21 +28,21 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       
+    #- name: Set up Python ${{ matrix.python-version }}
+    #  uses: actions/setup-python@v2
+    #  with:
+    #    python-version: ${{ matrix.python-version }}
+      
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
-      
-    # - name: Set up Python ${{ matrix.python-version }}
-    #  uses: actions/setup-python@v2
-    #  with:
-    #      python-version: ${{ matrix.python-version }}
-    #- uses: actions/cache@v1
-    #  with:
-    #      path: ~/.cache/pip
-    #      key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-    #      restore-keys: |
-    #        ${{ runner.os }}-pip-
+          python-version: ${{ matrix.python-version }}
+    - uses: actions/cache@v1
+      with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
             
     - name: Install Dependencies
       run: |
