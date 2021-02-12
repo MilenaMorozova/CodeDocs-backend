@@ -1,7 +1,7 @@
 from django.test import Client, TestCase
 from rest_framework import status
 
-from ..backend import AuthBackend
+from authentication.backend import AuthBackend
 
 
 class CheckUsername(TestCase):

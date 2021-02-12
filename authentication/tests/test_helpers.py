@@ -3,7 +3,7 @@ from django.test import TestCase, RequestFactory
 from rest_framework.decorators import api_view
 from rest_framework import status
 
-from ..helper import catch_view_exception
+from authentication.helper import catch_view_exception
 from helpers.logger import create_logger
 
 test_logger = create_logger('test_helper')
