@@ -6,5 +6,5 @@ from .views import (
 
 urlpatterns = [
     path('check_username/', check_username),
-    path('check_email', check_email),
+    path('check_email/', check_email),
 ]

@@ -11,10 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 from pathlib import Path
 from datetime import timedelta
-
-from CodeDocs_backend.config_postgresql import (
-    DB_PASSWORD, DB_USERNAME, EMAIL_PASSWORD, EMAIL_NAME
-)
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,11 +75,11 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
-EMAIL_HOST_USER = EMAIL_NAME
-EMAIL_HOST_PASSWORD = EMAIL_PASSWORD
+EMAIL_HOST_USER = os.getenv('CODE_DOCS_EMAIL_NAME')
+EMAIL_HOST_PASSWORD = os.getenv('CODE_DOCS_EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
-SERVER_EMAIL = EMAIL_NAME
-DEFAULT_FROM_EMAIL = EMAIL_NAME
+SERVER_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
+DEFAULT_FROM_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
 
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -93,7 +90,6 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(weeks=24),
-    # 'AUTH_HEADER_TYPES': ('JWT',),
     'ROTATE_REFRESH_TOKENS': True,
 }
 
@@ -137,8 +133,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'code_docs',
-        'USER': DB_USERNAME,
-        'PASSWORD': DB_PASSWORD,
+        'USER': os.getenv('CODE_DOCS_DB_USERNAME'),
+        'PASSWORD': os.getenv('CODE_DOCS_DB_PASSWORD'),
         'HOST': '127.0.0.1',
         'PORT': '5432',
         'TEST': {
