@@ -27,7 +27,7 @@ class CheckEmail(TestCase):
         self.client = Client()
 
     def test_email_is_unique(self):
-        response = self.client.post('/auth/check_email', {'email': 'masht@mail.ru'})
+        response = self.client.post('/auth/check_email/', {'email': 'masht@mail.ru'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_email_already_exist(self):
@@ -35,6 +35,6 @@ class CheckEmail(TestCase):
         auth_backend.create_user(username='Igor Mashtakov',
                                  email='masht@mail.ru',
                                  password='12345')
-        response = self.client.post('/auth/check_email', {'email': 'masht@mail.ru'})
+        response = self.client.post('/auth/check_email/', {'email': 'masht@mail.ru'})
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.content, b'This email is already in use')
