@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
 from pathlib import Path
+from datetime import timedelta
 
 from CodeDocs_backend.config_postgresql import (
     DB_PASSWORD, DB_USERNAME, EMAIL_PASSWORD, EMAIL_NAME
@@ -18,7 +18,6 @@ from CodeDocs_backend.config_postgresql import (
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -30,12 +29,15 @@ SECRET_KEY = 'd6cspfpj##7p%v25--_qqz*%nr!84)r5p*p1v@0rgl#^ys!i!@'
 DEBUG = True
 
 ALLOWED_HOSTS = ['26.158.8.9:8000',
-                 '26.158.8.9']
+                 '26.158.8.9',
+                 'localhost']
+
+DOMAIN = 'localhost:3000'
+SITE_NAME = 'code_docs'
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -89,7 +91,10 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(weeks=24),
+    # 'AUTH_HEADER_TYPES': ('JWT',),
+    'ROTATE_REFRESH_TOKENS': True,
 }
 
 DJOSER = {
@@ -102,6 +107,8 @@ DJOSER = {
     'PASSWORD_RESET_CONFIRM_RETYPE': True,
     'SERIALIZERS': {
         'user_create': 'authentication.serializers.UserRegistrationSerializer',
+        'user': 'authentication.serializers.UserSerializer',
+        'current_user': 'authentication.serializers.UserSerializer'
     }
 }
 
@@ -177,3 +184,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+

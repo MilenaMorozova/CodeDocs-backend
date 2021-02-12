@@ -53,3 +53,6 @@ class CustomUser(AbstractBaseUser):
     def save(self, *args, **kwargs):
         super(CustomUser, self).save(*args, **kwargs)
         return self
+
+    def get_short_name(self):
+        return self.username[:2]
