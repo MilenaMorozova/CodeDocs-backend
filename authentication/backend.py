@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.contrib.auth.backends import AllowAllUsersModelBackend
 from django.db.utils import IntegrityError
 
