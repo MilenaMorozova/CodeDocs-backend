@@ -42,13 +42,13 @@ class HelperTests(TestCase):
 
     def test_another_exception(self):
         request = self.factory.post('/tests/helper', {'username': '',
-                                                     'email': 'masht@mail.ru'})
+                                                      'email': 'masht@mail.ru'})
         response = test_view(request)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertTrue(b'problem in server' in response.content)
 
     def test_ok(self):
         request = self.factory.post('/tests/helper', {'username': 'Igor',
-                                                     'email': 'masht@mail.ru'})
+                                                      'email': 'masht@mail.ru'})
         response = test_view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

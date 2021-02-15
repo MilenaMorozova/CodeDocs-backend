@@ -1,6 +1,6 @@
-from django.db import models, transaction
+from django.db import models
 from django.contrib.auth.models import (
-    AbstractBaseUser, BaseUserManager, User
+    AbstractBaseUser, BaseUserManager
 )
 from django.db.models import Q
 from django.utils import timezone
@@ -17,7 +17,6 @@ class CustomAccountManager(BaseUserManager):
         """
         Creates and saves a User with the given username,and password.
         """
-        # with transaction.atomic():
         user = self.model(username=username,
                           email=email,
                           account_color=random_color())
