@@ -27,7 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['26.158.8.9:8000',
                  '26.158.8.9',
-                 'localhost']
+                 'localhost',
+                 '127.0.0.1']
 
 DOMAIN = 'localhost:3000'
 SITE_NAME = 'code_docs'
@@ -41,11 +42,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authentication.apps.AuthenticationConfig',
+    'file_manager.apps.FileManagerConfig',
 
     'rest_framework.authtoken',
     'rest_framework',
     'djoser',
     'corsheaders',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -70,16 +73,17 @@ CORS_ORIGIN_WHITELIST = (
 
 ROOT_URLCONF = 'CodeDocs_backend.urls'
 AUTH_USER_MODEL = 'authentication.CustomUser'
+ASGI_APPLICATION = "CodeDocs_backend.asgi.application"
 
 # email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
-EMAIL_HOST_USER = os.getenv('CODE_DOCS_EMAIL_NAME')
+EMAIL_HOST_USER = os.getenv('CODE_DOCS_EMAIL')
 EMAIL_HOST_PASSWORD = os.getenv('CODE_DOCS_EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
-SERVER_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
-DEFAULT_FROM_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
+SERVER_EMAIL = os.getenv('CODE_DOCS_EMAIL')
+DEFAULT_FROM_EMAIL = os.getenv('CODE_DOCS_EMAIL')
 
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
