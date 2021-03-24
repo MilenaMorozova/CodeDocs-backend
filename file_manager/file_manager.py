@@ -25,3 +25,22 @@ class FileManager:
             file.delete()
         except File.DoesNotExist:
             raise FileDoesNotExistException()
+
+    @staticmethod
+    def add_to_file_content(file_id, where, text):
+        file = File.objects.get(pk=file_id)
+
+        file.content = file.content[:where] + text + file.content[where:]
+        file.save()
+
+    @staticmethod
+    def delete_from_file_content(file_id, where, count):
+        file = File.objects.get(pk=file_id)
+
+        file.content = file.content[:where] + file.content[where + count:]
+        file.save()
+
+    @staticmethod
+    def replace_in_file_content(file_id, where, count, text):
+        FileManager.delete_from_file_content(file_id, where, count)
+        FileManager.add_to_file_content(file_id, where, text)

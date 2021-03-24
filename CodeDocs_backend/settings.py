@@ -25,13 +25,22 @@ SECRET_KEY = 'd6cspfpj##7p%v25--_qqz*%nr!84)r5p*p1v@0rgl#^ys!i!@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['26.158.8.9:8000',
-                 '26.158.8.9',
+ALLOWED_HOSTS = ['26.158.8.9',
                  'localhost',
                  '127.0.0.1']
 
 DOMAIN = 'localhost:3000'
 SITE_NAME = 'code_docs'
+
+CHANNEL_LAYERS = {
+    "default": {
+        # "BACKEND": "channels.layers.InMemoryChannelLayer",  # local-development
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Application definition
 
@@ -92,7 +101,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(weeks=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(weeks=24),
     'ROTATE_REFRESH_TOKENS': True,
 }
