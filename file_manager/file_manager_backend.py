@@ -3,6 +3,7 @@ from .models import File, UserFiles
 from .exceptions import (
     NoRequiredFileAccess, FileDoesNotExistException
 )
+from .operations import Insert, Delete
 
 
 class FileManager:
@@ -13,6 +14,7 @@ class FileManager:
         UserFiles.objects.create(file=file,
                                  user=user,
                                  access=UserFiles.Access.OWNER)
+        return file
 
     @staticmethod
     def delete_file(file_id, user):
@@ -25,6 +27,15 @@ class FileManager:
             file.delete()
         except File.DoesNotExist:
             raise FileDoesNotExistException()
+
+    @staticmethod
+    def get_user_files(user):
+        return UserFiles.objects.filter(user=user).all()
+
+    @staticmethod
+    def edit_file(file_id, operation, position, text, revision):
+        file = File.objects.get(pk=file_id)
+        current_operation = Insert(position, text) if operation == 'Ins' else Delete(position, text)
 
     @staticmethod
     def add_to_file_content(file_id, where, text):
