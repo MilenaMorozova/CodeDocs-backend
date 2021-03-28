@@ -26,3 +26,14 @@ class UserFiles(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='user_files')
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='user_files')
     access = models.IntegerField(choices=Access.choices)
+
+
+class Operations(models.Model):
+    class TypeOperation(models.IntegerChoices):
+        INSERT = 0
+        DELETE = 1
+
+    type = models.IntegerField(choices=TypeOperation.choices)
+    position = models.IntegerField()
+    text = models.TextField()
+    revision = models.IntegerField()

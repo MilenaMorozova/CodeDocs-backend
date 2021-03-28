@@ -25,9 +25,11 @@ SECRET_KEY = 'd6cspfpj##7p%v25--_qqz*%nr!84)r5p*p1v@0rgl#^ys!i!@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['26.158.8.9',
+ALLOWED_HOSTS = ['26.124.121.68',
+                 '26.158.8.9',
                  'localhost',
-                 '127.0.0.1']
+                 '127.0.0.1',
+                 '26.124.121.68']
 
 DOMAIN = 'localhost:3000'
 SITE_NAME = 'code_docs'

@@ -8,8 +8,8 @@ from .operations import Insert, Delete
 
 class FileManager:
     @staticmethod
-    def create_file(filename, programming_language, user):
-        file = File.objects.create(name=filename,
+    def create_file(name, programming_language, user):
+        file = File.objects.create(name=name,
                                    programming_language=programming_language)
         UserFiles.objects.create(file=file,
                                  user=user,

@@ -18,9 +18,9 @@ file_manager_logger = create_logger('file_manager_logger')
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@catch_view_exception(('filename', 'programming_language'), file_manager_logger)
+@catch_view_exception(('name', 'programming_language'), file_manager_logger)
 def create_file(request):
-    file = FileManager.create_file(request.data['filename'],
+    file = FileManager.create_file(request.data['name'],
                                    request.data['programming_language'],
                                    request.user)
     serializer = FileSerializer(file)
