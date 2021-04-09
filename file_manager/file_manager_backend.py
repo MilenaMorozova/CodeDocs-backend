@@ -1,4 +1,4 @@
-from .models import File, UserFiles
+from .models import File, UserFiles, Access
 
 from .exceptions import (
     NoRequiredFileAccess, FileDoesNotExistException
@@ -13,7 +13,7 @@ class FileManager:
                                    programming_language=programming_language)
         UserFiles.objects.create(file=file,
                                  user=user,
-                                 access=UserFiles.Access.OWNER)
+                                 access=Access.OWNER)
         return file
 
     @staticmethod
@@ -21,7 +21,7 @@ class FileManager:
         try:
             file = File.objects.get(pk=file_id)
 
-            if not file.user_files.filter(user=user, access=UserFiles.Access.OWNER).exists():
+            if not file.user_files.filter(user=user, access=Access.OWNER).exists():
                 raise NoRequiredFileAccess('OWNER')
 
             file.delete()
@@ -31,6 +31,14 @@ class FileManager:
     @staticmethod
     def get_user_files(user):
         return UserFiles.objects.filter(user=user).all()
+
+    @staticmethod
+    def generate_link(file_id):
+        try:
+            file = File.objects.get(id=file_id)
+            return f"/file/{file.encode()}"
+        except File.DoesNotExist:
+            raise FileDoesNotExistException()
 
     @staticmethod
     def edit_file(file_id, operation, position, text, revision):

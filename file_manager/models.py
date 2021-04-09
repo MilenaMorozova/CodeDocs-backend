@@ -1,6 +1,18 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+import base64
+import json
+
+from .exceptions import (
+    FileDoesNotExistException, UnableToDecodeFileException
+)
+
+
+class Access(models.IntegerChoices):
+    VIEWER = 0
+    EDITOR = 1
+    OWNER = 2
 
 
 class File(models.Model):
@@ -16,12 +28,25 @@ class File(models.Model):
                                    through='UserFiles',
                                    related_name='files')
 
+    link_access = models.IntegerField(default=Access.VIEWER, choices=Access.choices)
+
+    def encode(self):
+        return str(base64.b64encode(bytes(json.dumps({"file_id": self.pk}), encoding='UTF-8')), encoding='UTF-8')
+
+    @staticmethod
+    def decode(data: str):
+        try:
+            b_data = bytes(data, encoding='UTF-8')
+            decode_data = base64.b64decode(b_data)
+            file_id = json.loads(decode_data, encoding='UTF-8')['file_id']
+            return File.objects.get(pk=file_id)
+        except File.DoesNotExist:
+            raise FileDoesNotExistException()
+        except Exception:
+            raise UnableToDecodeFileException()
+
 
 class UserFiles(models.Model):
-    class Access(models.IntegerChoices):
-        VIEWER = 0
-        EDITOR = 1
-        OWNER = 2
 
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='user_files')
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='user_files')

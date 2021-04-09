@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'djoser',
     'corsheaders',
     'channels',
+    'channels_presence',
 ]
 
 MIDDLEWARE = [

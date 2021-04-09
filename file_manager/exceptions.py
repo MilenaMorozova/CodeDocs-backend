@@ -14,4 +14,9 @@ class NoRequiredFileAccess(FileManageException):
 
 class FileDoesNotExistException(FileManageException):
     def __init__(self):
-        super().__init__(f"Such file does not exist", status.HTTP_404_NOT_FOUND)
+        super().__init__("Such file does not exist", status.HTTP_404_NOT_FOUND)
+
+
+class UnableToDecodeFileException(FileManageException):
+    def __init__(self):
+        super().__init__("Unable to decode file", status.HTTP_400_BAD_REQUEST)
