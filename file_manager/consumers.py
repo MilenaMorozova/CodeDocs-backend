@@ -1,7 +1,7 @@
 from channels.generic.websocket import JsonWebsocketConsumer
 from asgiref.sync import async_to_sync
 from rest_framework_simplejwt.authentication import JWTTokenUserAuthentication
-from channels_presence.models import Room
+from channels_presence.models import Room, Presence
 from channels_presence.decorators import (
     remove_presence, touch_presence
 )
@@ -29,8 +29,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
 
     def connect(self):
         self.accept()
-        self.send_json({'type': 'channel_name',
-                        'channel_name': self.channel_name})
+
         # get current user
         try:
             jwt = JWTTokenUserAuthentication()
@@ -65,11 +64,15 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                                       access=self.file.link_access)
         self.access = access_to_file.access
 
-        user_serializer = UserWithAccessSerializer(access_to_file)
-        self.send_to_group({'type': 'new_user',
-                            'user': user_serializer.data,
-                            'channel_name': self.channel_name})
+        self.send_json({'type': 'channel_name',
+                        'channel_name': self.channel_name})
 
+        if Presence.objects.filter(user=self.scope['user'], room=self.room).count() == 1:
+            user_serializer = UserWithAccessSerializer(access_to_file)
+            self.send_to_group({'type': 'new_user',
+                                'user': user_serializer.data})
+
+    @remove_presence
     def close_connect(self, http_code):
         self.close(4000 + http_code)
         raise StopConsumer()
@@ -133,8 +136,9 @@ class FileEditorConsumer(JsonWebsocketConsumer):
     @remove_presence
     def disconnect(self, code):
         # leave room
-        user_serializer = UserSerializer(self.scope['user'])
-        self.send_to_group({'type': 'delete_user',
-                            'content': user_serializer.data})
+        if not Presence.objects.filter(user=self.scope['user'], room=self.room).exists():
+            user_serializer = UserSerializer(self.scope['user'])
+            self.send_to_group({'type': 'delete_user',
+                                'user': user_serializer.data})
         async_to_sync(self.channel_layer.group_discard)(self.room_group_name,
                                                         self.channel_name)
