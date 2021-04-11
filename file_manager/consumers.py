@@ -72,7 +72,6 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             self.send_to_group({'type': 'new_user',
                                 'user': user_serializer.data})
 
-    @remove_presence
     def close_connect(self, http_code):
         self.close(4000 + http_code)
         raise StopConsumer()
