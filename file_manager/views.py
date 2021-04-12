@@ -60,3 +60,16 @@ def open_file(request):
         return HttpResponse(file_link, status=status.HTTP_200_OK)
     except FileManageException as e:
         return HttpResponse(content=e.message, status=e.response_status)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@catch_view_exception(['file_id'], file_manager_logger)
+def leave_file(request):
+    try:
+        FileManager.leave_file(request.data['file_id'],
+                               request.user)
+        return HttpResponse(status=status.HTTP_200_OK)
+    except FileManageException as e:
+        return HttpResponse(content=e.message, status=e.response_status)

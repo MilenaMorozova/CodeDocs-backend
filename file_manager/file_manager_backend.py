@@ -41,25 +41,12 @@ class FileManager:
             raise FileDoesNotExistException()
 
     @staticmethod
-    def edit_file(file_id, operation, position, text, revision):
-        file = File.objects.get(pk=file_id)
-        current_operation = Insert(position, text) if operation == 'Ins' else Delete(position, text)
+    def leave_file(file_id, user):
+        try:
+            access_to_file = UserFiles.objects.get(file__id=file_id, user=user)
+            if access_to_file.access == Access.OWNER:
+                raise NoRequiredFileAccess('VIEWER OR EDITOR')
+            access_to_file.delete()
 
-    @staticmethod
-    def add_to_file_content(file_id, where, text):
-        file = File.objects.get(pk=file_id)
-
-        file.content = file.content[:where] + text + file.content[where:]
-        file.save()
-
-    @staticmethod
-    def delete_from_file_content(file_id, where, count):
-        file = File.objects.get(pk=file_id)
-
-        file.content = file.content[:where] + file.content[where + count:]
-        file.save()
-
-    @staticmethod
-    def replace_in_file_content(file_id, where, count, text):
-        FileManager.delete_from_file_content(file_id, where, count)
-        FileManager.add_to_file_content(file_id, where, text)
+        except UserFiles.DoesNotExist:
+            raise NoRequiredFileAccess('ANY')

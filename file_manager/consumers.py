@@ -10,7 +10,7 @@ from channels.exceptions import StopConsumer
 from rest_framework import status
 
 from authentication.models import CustomUser
-from .models import File, UserFiles, Access
+from .models import File, UserFiles
 from .serializers import (
     UserWithAccessSerializer, FileSerializer
 )
@@ -34,6 +34,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         try:
             jwt = JWTTokenUserAuthentication()
             validated_token = jwt.get_validated_token(self.scope['url_route']['kwargs']['access_token'])
+            print("CONNECT", CustomUser.objects.count())
             token_user = jwt.get_user(validated_token)
             self.scope['user'] = CustomUser.objects.get(pk=token_user.pk)
         except InvalidToken as e:
@@ -113,7 +114,8 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.file.save()
 
         file_serializer = FileSerializer(self.file)
-        self.send_to_group({'file': file_serializer.data})
+        self.send_to_group({'type': event['type'],
+                            'file': file_serializer.data})
 
     def change_link_access(self, event):
         self.file.link_access = event['new_access']
@@ -121,16 +123,21 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group(event)
 
     def change_user_access(self, event):
-        user = UserFiles.objects.get(user__id=event['another_user_id'])
+        user = UserFiles.objects.get(user__id=event['another_user_id'], file=self.file)
 
         if self.access < user.access:
-            self.send_json({'error': "Don't access to change user access"})
+            self.send_json({'type': 'error',
+                            'code': 4000 + status.HTTP_403_FORBIDDEN})
         elif self.access < event['new_access']:
-            self.send_json({'error': "No rules to change to the access"})
+            self.send_json({'type': 'error',
+                            'code': 4000 + status.HTTP_406_NOT_ACCEPTABLE})
         else:
             user.access = event['new_access']
             user.save()
-            self.send_to_group(event)
+
+            user_serializer = UserWithAccessSerializer(user)
+            self.send_to_group({'type': event['type'],
+                                'user': user_serializer.data})
 
     @remove_presence
     def disconnect(self, code):
