@@ -29,6 +29,7 @@ class File(models.Model):
                                    related_name='files')
 
     link_access = models.IntegerField(default=Access.VIEWER, choices=Access.choices)
+    last_revision = models.IntegerField(default=0)
 
     def encode(self):
         return str(base64.b64encode(bytes(json.dumps({"file_id": self.pk}), encoding='UTF-8')), encoding='UTF-8')
@@ -54,11 +55,15 @@ class UserFiles(models.Model):
 
 
 class Operations(models.Model):
-    class TypeOperation(models.IntegerChoices):
-        INSERT = 0
-        DELETE = 1
+    class Type(models.IntegerChoices):
+        NEU = 0
+        INSERT = 1
+        DELETE = 2
 
-    type = models.IntegerField(choices=TypeOperation.choices)
+    type = models.IntegerField(choices=Type.choices)
     position = models.IntegerField()
     text = models.TextField()
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='operations')
     revision = models.IntegerField()
+    channel_name = models.CharField(max_length=60)
+

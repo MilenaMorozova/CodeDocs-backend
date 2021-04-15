@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from file_manager.models import File, UserFiles
+from file_manager.models import File, UserFiles, Operations
 from authentication.serializers import UserSerializer
 
 
@@ -29,4 +29,10 @@ class UserWithAccessSerializer(serializers.ModelSerializer):
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ('id', 'name', 'programming_language', 'content', 'link_access')
+        fields = ('id', 'name', 'programming_language', 'content', 'link_access', 'last_revision')
+
+
+class OperationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Operations
+        fields = ('type', 'position', 'text', 'revision', 'channel_name')

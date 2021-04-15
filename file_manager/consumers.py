@@ -10,12 +10,13 @@ from channels.exceptions import StopConsumer
 from rest_framework import status
 
 from authentication.models import CustomUser
-from .models import File, UserFiles
+from .models import File, UserFiles, Operations
 from .serializers import (
-    UserWithAccessSerializer, FileSerializer
+    UserWithAccessSerializer, FileSerializer, OperationSerializer
 )
 from authentication.serializers import UserSerializer
 from .exceptions import FileManageException
+from .operation_factory import OperationFactory as factory
 
 
 class FileEditorConsumer(JsonWebsocketConsumer):
@@ -138,6 +139,39 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             user_serializer = UserWithAccessSerializer(user)
             self.send_to_group({'type': event['type'],
                                 'user': user_serializer.data})
+
+    def apply_operation(self, event):
+        bd_operations = Operations.objects.filter(revision__gt=event['revision'],
+                                                  file=self.file).order_by('revision').all()
+        operations = [factory.create(operation.type, operation.position, operation.text) for operation in bd_operations]
+
+        # operation transformation
+        current_operation = factory.create(event['operation']['type'],
+                                           event['operation']['position'],
+                                           event['operation']['text'])
+        for operation in operations:
+            current_operation /= operation
+
+        # update file content
+        self.file.content = current_operation.execute(self.file.content)
+        self.file.last_revision += 1
+        self.file.save()
+
+        current_operation_query = Operations.objects.create(**current_operation.info(),
+                                                      revision=self.file.last_revision,
+                                                      file=self.file,
+                                                      channel_name=self.channel_name)
+
+        operation_serializer = OperationSerializer(current_operation_query)
+        self.send_to_group({'type': event['type'],
+                            'operation': operation_serializer.data})
+
+    def operation_history(self, event):
+        operations_query = Operations.objects.filter(revision__gt=event['revision']).order_by('revision').all()
+
+        operation_serializer = OperationSerializer(operations_query, many=True)
+        self.send_json({'type': event['type'],
+                        'operations': operation_serializer.data})
 
     @remove_presence
     def disconnect(self, code):
