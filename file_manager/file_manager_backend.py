@@ -8,12 +8,28 @@ from .operations import Insert, Delete
 
 class FileManager:
     @staticmethod
-    def create_file(name, programming_language, user):
+    def create_file(name, programming_language, owner, prev_file_id=None):
         file = File.objects.create(name=name,
                                    programming_language=programming_language)
+
         UserFiles.objects.create(file=file,
-                                 user=user,
+                                 user=owner,
                                  access=Access.OWNER)
+
+        if prev_file_id:
+            participants = []
+            for access_to_file in UserFiles.objects.filter(file__id=prev_file_id).all():
+                if access_to_file.user == owner:
+                    continue
+
+                access_to_prev_file = access_to_file.access
+
+                if access_to_prev_file == Access.OWNER:
+                    access_to_prev_file = Access.EDITOR
+
+                participants.append(UserFiles(user=access_to_file.user, file=file, access=access_to_prev_file))
+
+            UserFiles.objects.bulk_create(participants)
         return file
 
     @staticmethod

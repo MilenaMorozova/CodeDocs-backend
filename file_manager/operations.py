@@ -1,6 +1,6 @@
 class Operation:
     def __init__(self, position, text):
-        self.position = position
+        self.start = position
         self.text = text
 
     def __truediv__(self, prev_operation):
@@ -10,52 +10,81 @@ class Operation:
         pass
 
     def __str__(self):
-        return f"[{self.__class__}, {self.position} {self.text}]"
+        return f"[{self.__class__}, {self.start} {self.text}]"
+
+    def end(self):
+        return self.start + len(self.text)
 
 
 class NeutralOperation(Operation):
     def __init__(self):
         super().__init__(None, None)
 
+    def execute(self, file_content):
+        return file_content
+
+    def __truediv__(self, prev_operation):
+        return NeutralOperation()
+
 
 class Insert(Operation):
     def execute(self, file_content):
-        return file_content[:self.position] + self.text + file_content[self.position:]
+        return file_content[:self.start] + self.text + file_content[self.start:]
 
     def __truediv__(self, prev_operation):
-        # insert
+        # prev_operation - insert
         if isinstance(prev_operation, Insert):
-            if self.position <= prev_operation.position:
-                return self
-                # return Insert(self.position, self.text)
+            if self.start <= prev_operation.start:
+                return Insert(self.start, self.text)
             else:
-                return Insert(self.position + len(prev_operation.text), self.text)
-        # delete
+                return Insert(self.start + len(prev_operation.text), self.text)
+        # prev_operation - delete
         elif isinstance(prev_operation, Delete):
-            if self.position <= prev_operation.position:
-                return self
-                # return Insert(self.position, self.text)
-            elif self.position >= (prev_operation.position + len(prev_operation.text)):
-                return Insert(self.position - len(prev_operation.text), self.text)
+            if self.start <= prev_operation.start:
+                return Insert(self.start, self.text)
+            elif self.start > prev_operation.end():
+                return Insert(self.start - len(prev_operation.text), self.text)
             else:
-                return Insert(prev_operation.position, self.text)
+                return Insert(prev_operation.start, self.text)
+        # prev_operation - neu
+        elif isinstance(prev_operation, NeutralOperation):
+            return Insert(self.start, self.text)
 
 
 class Delete(Operation):
     def execute(self, file_content):
-        return file_content[:self.position] + file_content[self.position+len(self.text):]
+        return file_content[:self.start] + file_content[self.start + len(self.text):]
 
     def __truediv__(self, prev_operation):
+        # prev_operation - insert
         if isinstance(prev_operation, Insert):
-            pass
+            if prev_operation.start <= self.start:
+                return Delete(self.start + len(prev_operation.text), self.text)
+            elif self.start < prev_operation.start < self.end():
+                difference = prev_operation.start - self.start
+                return Delete(self.start, self.text[:difference] + prev_operation.text + self.text[difference:])
+            else:
+                return Delete(self.start, self.text)
+        # prev_operation - delete
         elif isinstance(prev_operation, Delete):
-            if self.position + len(self.text) <= prev_operation.position:
-                return self
-            elif (self.position < prev_operation.position) and (prev_operation.position < self.position + len(self.text) < prev_operation.position + len(prev_operation.text)):
-                return Delete(self.position, self.text[:prev_operation.position-self.position])
-            elif (prev_operation.position <= self.position) and (len(self.text) <= len(prev_operation.text)):
+            if self.end() <= prev_operation.start:
+                return Delete(self.start, self.text)
+
+            elif (self.start < prev_operation.start) and (prev_operation.start < self.end() <= prev_operation.end()):
+                return Delete(self.start, self.text[:prev_operation.start - self.start])
+
+            elif (prev_operation.start <= self.start) and (self.end() <= prev_operation.end()):
                 return NeutralOperation()
-            elif (prev_operation.position <= self.position <= len(prev_operation.text)) and (prev_operation.position + len(prev_operation.text) < self.position + len(self.text)):
-                return Delete(prev_operation.position, self.text[:prev_operation.position + len(prev_operation.text) - self.position])
-            elif self.position > prev_operation.position + len(prev_operation.text):
-                return Delete(self.position * len(prev_operation.text), self.text)
+
+            elif (prev_operation.start <= self.start <= prev_operation.end()) and (prev_operation.end() < self.end()):
+                return Delete(prev_operation.start, self.text[prev_operation.end() - self.start:])
+
+            elif self.start > prev_operation.end():
+                return Delete(self.start - len(prev_operation.text), self.text)
+
+            else:
+                return Delete(self.start, self.text[:prev_operation.start - self.start] +
+                              self.text[prev_operation.end() - self.start:])
+        # prev_operation - neu
+        elif isinstance(prev_operation, NeutralOperation):
+            return Delete(self.start, self.text)

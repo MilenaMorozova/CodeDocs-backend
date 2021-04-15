@@ -22,7 +22,8 @@ file_manager_logger = create_logger('file_manager_logger')
 def create_file(request):
     file = FileManager.create_file(request.data['name'],
                                    request.data['programming_language'],
-                                   request.user)
+                                   request.user,
+                                   request.data.get('prev_file_id'))
     serializer = FileWithoutContentSerializer(file)
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
