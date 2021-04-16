@@ -65,5 +65,4 @@ class Operations(models.Model):
     text = models.TextField()
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='operations')
     revision = models.IntegerField()
-    channel_name = models.CharField(max_length=60)
-
+    channel_name = models.TextField()
