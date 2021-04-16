@@ -35,7 +35,6 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         try:
             jwt = JWTTokenUserAuthentication()
             validated_token = jwt.get_validated_token(self.scope['url_route']['kwargs']['access_token'])
-            print("CONNECT", CustomUser.objects.count())
             token_user = jwt.get_user(validated_token)
             self.scope['user'] = CustomUser.objects.get(pk=token_user.pk)
         except InvalidToken as e:
@@ -91,6 +90,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         getattr(self, content['type'])(content)
 
     def file_info(self, event):
+        self.file.refresh_from_db()
         file_serializer = FileSerializer(self.file)
         self.send_json({**event,
                         'file': file_serializer.data})
@@ -109,6 +109,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                         'users': serializer.data})
 
     def change_file_config(self, event):
+        self.file.refresh_from_db()
         for field in event['config']:
             setattr(self.file, field, event['config'][field])
 
@@ -119,6 +120,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                             'file': file_serializer.data})
 
     def change_link_access(self, event):
+        self.file.refresh_from_db()
         self.file.link_access = event['new_access']
         self.file.save()
         self.send_to_group(event)
@@ -153,6 +155,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             current_operation /= operation
 
         # update file content
+        self.file.refresh_from_db()
         self.file.content = current_operation.execute(self.file.content)
         self.file.last_revision += 1
         self.file.save()
