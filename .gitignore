@@ -88,3 +88,6 @@ for_me.py
 
 # idea
 .idea/
+
+# project settings
+# CodeDocs_backend/settings.py

@@ -3,7 +3,6 @@ from .models import File, UserFiles, Access
 from .exceptions import (
     NoRequiredFileAccess, FileDoesNotExistException
 )
-from .operations import Insert, Delete
 
 
 class FileManager:

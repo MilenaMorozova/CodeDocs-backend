@@ -126,19 +126,19 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group(event)
 
     def change_user_access(self, event):
-        user = UserFiles.objects.get(user__id=event['another_user_id'], file=self.file)
+        another_user = UserFiles.objects.get(user__id=event['another_user_id'], file=self.file)
 
-        if self.access < user.access:
+        if self.access < another_user.access:
             self.send_json({'type': 'error',
                             'code': 4000 + status.HTTP_403_FORBIDDEN})
         elif self.access < event['new_access']:
             self.send_json({'type': 'error',
                             'code': 4000 + status.HTTP_406_NOT_ACCEPTABLE})
         else:
-            user.access = event['new_access']
-            user.save()
+            another_user.access = event['new_access']
+            another_user.save()
 
-            user_serializer = UserWithAccessSerializer(user)
+            user_serializer = UserWithAccessSerializer(another_user)
             self.send_to_group({'type': event['type'],
                                 'user': user_serializer.data})
 
@@ -183,5 +183,12 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             user_serializer = UserSerializer(self.scope['user'])
             self.send_to_group({'type': 'delete_user',
                                 'user': user_serializer.data})
+
+        # last connection
+        if not self.room.get_users().exists():
+            Operations.objects.filter(file=self.file).all().delete()
+            self.file.last_revision = 0
+            self.file.save()
+
         async_to_sync(self.channel_layer.group_discard)(self.room_group_name,
                                                         self.channel_name)

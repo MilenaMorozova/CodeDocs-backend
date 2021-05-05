@@ -6,6 +6,7 @@ from file_manager.exceptions import (
 from file_manager.file_manager_backend import FileManager
 from authentication.models import CustomUser
 from file_manager.models import UserFiles, File, Access
+from file_manager.consumers import FileEditorConsumer
 
 
 class CreateFileTestCase(TestCase):
