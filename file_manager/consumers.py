@@ -176,6 +176,9 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_json({'type': event['type'],
                         'operations': operation_serializer.data})
 
+    def run_file(self, event):
+        pass
+
     @remove_presence
     def disconnect(self, code):
         # leave room
