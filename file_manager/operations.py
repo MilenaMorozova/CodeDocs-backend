@@ -11,7 +11,7 @@ class Operation:
 
     def __str__(self):
         return f"[{self.__class__}, {self.start} {self.text}]"
-    
+
     @property
     def end(self):
         return self.start + len(self.text)

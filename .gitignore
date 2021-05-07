@@ -91,3 +91,7 @@ for_me.py
 
 # project settings
 # CodeDocs_backend/settings.py
+
+# migrations
+authentication/migrations/
+file_manager/migrations/

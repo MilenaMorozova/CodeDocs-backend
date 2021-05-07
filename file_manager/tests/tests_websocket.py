@@ -1,17 +1,20 @@
-from channels.testing import WebsocketCommunicator
-from django.test import TransactionTestCase
 from unittest.mock import patch
 import base64
 import json
+
+from channels.testing import WebsocketCommunicator
+from django.test import TransactionTestCase
 from channels_presence.models import Presence
 from asgiref.sync import sync_to_async
 
 from CodeDocs_backend.asgi import application
 from authentication.models import CustomUser
-from file_manager.models import File, UserFiles, Access
+from file_manager.models import File, UserFiles, Access, Operations
 from file_manager.file_manager_backend import FileManager
 from authentication.serializers import UserSerializer
-from file_manager.serializers import FileSerializer, UserWithAccessSerializer
+from file_manager.serializers import (
+    FileSerializer, UserWithAccessSerializer, OperationSerializer
+)
 
 
 class MockJWTTokenUserAuthentication:
@@ -462,7 +465,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.encode()}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
@@ -499,7 +502,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.encode()}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
@@ -530,13 +533,12 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                            email='1@mail.ru',
                                                                            password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.encode()}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
         _ = await another_communicator.output_queue.get()  # new_user
 
-        # the second user try to change the first user access
         await communicator.send_json_to({'type': 'change_user_access',
                                          'new_access': Access.EDITOR,
                                          'another_user_id': another_user.pk})
@@ -551,5 +553,96 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                       'user': await sync_to_async(another_user_with_access)()}
         self.assertDictEqual(change_access_answer, right_change_access_answer)
 
-    async def test_apply_operation(self):
-        pass
+    async def test_apply_operation__one_operation(self):
+        communicator = WebsocketCommunicator(application.application_mapping["websocket"],
+                                             f"/files/{self.file.encode()}/1278/")
+        await communicator.connect()
+
+        _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # new_user
+
+        operation = {'type': Operations.Type.INSERT,
+                     'position': 0,
+                     'text': "Hello!"}
+        await communicator.send_json_to({'type': 'apply_operation',
+                                         'revision': 0,
+                                         'operation': operation})
+
+        apply_operation_answer = await communicator.output_queue.get()
+
+        def check_operation():
+            prev_revision = self.file.last_revision
+            self.file.refresh_from_db()
+            self.assertEqual(prev_revision + 1, self.file.last_revision)
+            self.assertEqual(self.file.content, operation['text'])
+
+            self.assertTrue(Operations.objects.filter(**operation, revision=self.file.last_revision).exists())
+
+            operation_answer = json.loads(apply_operation_answer['text'])
+
+            db_operation = Operations.objects.last()
+            right_operation_answer = {'type': 'apply_operation',
+                                      'operation': OperationSerializer(db_operation).data}
+            self.assertDictEqual(operation_answer, right_operation_answer)
+
+        await sync_to_async(check_operation)()
+
+    # async def test_apply_operation__several_operations(self):
+    #     # the first connect
+    #     communicator = WebsocketCommunicator(application.application_mapping["websocket"],
+    #                                          f"/files/{self.file.encode()}/1278/")
+    #     await communicator.connect()
+    #
+    #     _ = await communicator.output_queue.get()  # channel_name
+    #     _ = await communicator.output_queue.get()  # new_user
+    #
+    #     # the second_connect
+    #     _ = await sync_to_async(CustomUser.objects.create_user)(username='Michael Scofield',
+    #                                                             email='1@mail.ru',
+    #                                                             password='15')
+    #     another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
+    #                                                  f"/files/{self.file.encode()}/1278/")
+    #     await another_communicator.connect()
+    #
+    #     _ = await another_communicator.output_queue.get()  # channel_name
+    #     _ = await another_communicator.output_queue.get()  # new_user
+    #
+    #     operation1 = {'type': Operations.Type.INSERT,
+    #                  'position': 0,
+    #                  'text': "Hello!"}
+    #     operation2 = {'type': Operations.Type.INSERT,
+    #                  'position': 5,
+    #                  'text': " World!"}
+    #     operation3 = {'type': Operations.Type.DELETE,
+    #                  'position': 0,
+    #                  'text': "He"}
+    #     operation4 = {'type': Operations.Type.NEU,
+    #                   'position': None,
+    #                   'text': None}
+    #
+    #     await communicator.send_json_to({'type': 'apply_operation',
+    #                                      'revision': 0,
+    #                                      'operation': operation1})
+    #     _ = await communicator.output_queue.get()
+    #     await communicator.send_json_to({'type': 'apply_operation',
+    #                                      'revision': 1,
+    #                                      'operation': operation4})
+    #     _ = await communicator.output_queue.get()
+    #     await another_communicator.send_json_to({'type': 'apply_operation',
+    #                                              'revision': 2,
+    #                                              'operation': operation3})
+    #     _ = await another_communicator.output_queue.get()
+    #     await communicator.send_json_to({'type': 'apply_operation',
+    #                                      'revision': 3,
+    #                                      'operation': operation2})
+    #
+    #     _ = await communicator.output_queue.get()
+    #
+    #     def check_operation():
+    #         self.file.refresh_from_db()
+    #         self.assertEqual(self.file.last_revision, 4)
+    #         self.assertEqual(self.file.content, "llo World!")
+    #
+    #         self.assertTrue(Operations.objects.count(), 4)
+    #
+    #     await sync_to_async(check_operation)()

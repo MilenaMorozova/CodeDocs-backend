@@ -13,8 +13,8 @@ class CreateFileTestCase(TestCase):
         self.client = APIClient()
 
         self.user = CustomUser.objects.create_user(username='Igor Mashtakov',
-                                                    email='111@mail.ru',
-                                                    password='12345')
+                                                   email='111@mail.ru',
+                                                   password='12345')
 
         self.client.force_authenticate(user=self.user)
 
@@ -43,8 +43,8 @@ class MyFileTestCase(TestCase):
         self.client = APIClient()
 
         self.user = CustomUser.objects.create_user(username='Igor Mashtakov',
-                                                    email='111@mail.ru',
-                                                    password='12345')
+                                                   email='111@mail.ru',
+                                                   password='12345')
 
         self.client.force_authenticate(user=self.user)
 

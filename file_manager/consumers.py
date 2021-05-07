@@ -161,9 +161,9 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.file.save()
 
         current_operation_query = Operations.objects.create(**current_operation.info(),
-                                                      revision=self.file.last_revision,
-                                                      file=self.file,
-                                                      channel_name=self.channel_name)
+                                                            revision=self.file.last_revision,
+                                                            file=self.file,
+                                                            channel_name=self.channel_name)
 
         operation_serializer = OperationSerializer(current_operation_query)
         self.send_to_group({'type': event['type'],
