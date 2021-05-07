@@ -49,3 +49,4 @@ jobs:
         CODE_DOCS_DB_PASSWORD: postgres
       run: |
         python manage.py test authentication/tests
+        python manage.py test file_manager/tests
