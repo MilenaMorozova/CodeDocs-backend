@@ -62,7 +62,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertEqual(answer, {'type': 'websocket.close', 'code': 4400})
 
     async def test_connection__file_does_not_exist(self):
-        encode_file_id = str(base64.b64encode(bytes(json.dumps({"file_id": 16}), encoding='UTF-8')), encoding='UTF-8')
+        encode_file_id = str(base64.b64encode(bytes(json.dumps({"file_id": self.file.pk + 1}), encoding='UTF-8')), encoding='UTF-8')
 
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
                                              f"/files/{encode_file_id}/1278/")

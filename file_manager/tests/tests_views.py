@@ -1,3 +1,5 @@
+import json
+
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -5,6 +7,7 @@ from rest_framework.test import APIClient
 from authentication.models import CustomUser
 from file_manager.models import UserFiles, File, Access
 from file_manager.exceptions import FileDoesNotExistException
+from file_manager.serializers import FileWithoutContentSerializer
 
 
 class CreateFileTestCase(TestCase):
@@ -57,9 +60,11 @@ class MyFileTestCase(TestCase):
                        'programming_language': "python"}
         _ = self.client.post('/file/create_file/', file_params).content
         response = self.client.get('/file/my')
-        self.assertContains(response, b'[{"file": {"id": 1, "name": "file_1", "programming_language": "python"}, '
-                                      b'"access": 2}]')
-        # self.assertContains(response, b'[{"file": ' + file_data + b', "access": 2}]')
+
+        right_file_data = FileWithoutContentSerializer(File.objects.last()).data
+        file_data = json.loads(response.content)
+        self.assertEqual(len(file_data), 1)
+        self.assertDictEqual(file_data[0]['file'], right_file_data)
 
 
 class DeleteFileTestsCase(TestCase):
@@ -68,7 +73,7 @@ class DeleteFileTestsCase(TestCase):
 
         self.user = CustomUser.objects.create_user(username='Igor Mashtakov',
                                                    email='111@mail.ru',
-                                                   assword='12345')
+                                                   password='12345')
 
         self.client.force_authenticate(user=self.user)
 

@@ -51,11 +51,6 @@ class FileEditorConsumer(JsonWebsocketConsumer):
 
         self.room_group_name = f"file_{self.file.pk}"
 
-        # Join room group
-        async_to_sync(self.channel_layer.group_add)(self.room_group_name,
-                                                    self.channel_name)
-        self.room = Room.objects.add(self.room_group_name, self.channel_name, self.scope["user"])
-
         # check access to file
         try:
             access_to_file = UserFiles.objects.get(user=self.scope['user'], file=self.file)
@@ -64,6 +59,11 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                                       file=self.file,
                                                       access=self.file.link_access)
         self.access = access_to_file.access
+
+        # Join room group
+        async_to_sync(self.channel_layer.group_add)(self.room_group_name,
+                                                    self.channel_name)
+        self.room = Room.objects.add(self.room_group_name, self.channel_name, self.scope["user"])
 
         self.send_json({'type': 'channel_name',
                         'channel_name': self.channel_name})

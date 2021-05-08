@@ -18,7 +18,7 @@ class CreateFileTestCase(TestCase):
         File.objects.all().delete()
 
     def test_create_file(self):
-        file = FileManager.create_file(name="file_1", programming_language="python", user=self.user)
+        file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
 
         self.assertTrue(UserFiles.objects.filter(file=file,
                                                  user=self.user,
@@ -35,7 +35,7 @@ class DeleteFileTestCase(TestCase):
         File.objects.all().delete()
 
     def test_delete_file(self):
-        file = FileManager.create_file(name="file_1", programming_language="python", user=self.user)
+        file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
 
         FileManager.delete_file(file_id=file.pk, user=self.user)
 
@@ -48,7 +48,7 @@ class DeleteFileTestCase(TestCase):
             FileManager.delete_file(file_id=1, user=self.user)
 
     def test_no_owner(self):
-        file = FileManager.create_file(name="file_1", programming_language="python", user=self.user)
+        file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
 
         another_user = CustomUser.objects.create_user(username='Michael Scolfield',
                                                       email='121@mail.ru',
@@ -72,7 +72,7 @@ class MyFilesTestCase(TestCase):
         self.assertEqual(files.count(), 0)
 
     def test_files_exist(self):
-        file = FileManager.create_file(name="file_1", programming_language="python", user=self.user)
+        file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
 
         files = FileManager.get_user_files(self.user)
         self.assertTrue(files.filter(file=file).exists())
@@ -92,7 +92,7 @@ class GenerateLinkTestCase(TestCase):
             FileManager.generate_link(1)
 
     def test_file_exist(self):
-        file = FileManager.create_file(name="file_1", programming_language="python", user=self.user)
+        file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
         result = FileManager.generate_link(file.pk)
 
         encode_file = result.split('/')[-1]
