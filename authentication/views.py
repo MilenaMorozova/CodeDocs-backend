@@ -4,7 +4,7 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 
 from authentication.backend import AuthBackend
-from .helper import catch_view_exception
+from helpers.helper import catch_view_exception
 from .auth_logger import auth_logger
 from .exceptions import AuthenticationException
 

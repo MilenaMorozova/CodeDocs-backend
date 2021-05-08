@@ -25,12 +25,24 @@ SECRET_KEY = 'd6cspfpj##7p%v25--_qqz*%nr!84)r5p*p1v@0rgl#^ys!i!@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['26.158.8.9:8000',
+ALLOWED_HOSTS = ['26.124.121.68',
                  '26.158.8.9',
-                 'localhost']
+                 'localhost',
+                 '127.0.0.1',
+                 '26.124.121.68']
 
-DOMAIN = 'localhost:3000'
+DOMAIN = '26.124.121.68:3000'
 SITE_NAME = 'code_docs'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # local-development
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
+    },
+}
 
 # Application definition
 
@@ -41,11 +53,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authentication.apps.AuthenticationConfig',
+    'file_manager.apps.FileManagerConfig',
 
     'rest_framework.authtoken',
     'rest_framework',
     'djoser',
     'corsheaders',
+    'channels',
+    'channels_presence',
 ]
 
 MIDDLEWARE = [
@@ -70,16 +85,17 @@ CORS_ORIGIN_WHITELIST = (
 
 ROOT_URLCONF = 'CodeDocs_backend.urls'
 AUTH_USER_MODEL = 'authentication.CustomUser'
+ASGI_APPLICATION = "CodeDocs_backend.asgi.application"
 
 # email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
-EMAIL_HOST_USER = os.getenv('CODE_DOCS_EMAIL_NAME')
+EMAIL_HOST_USER = os.getenv('CODE_DOCS_EMAIL')
 EMAIL_HOST_PASSWORD = os.getenv('CODE_DOCS_EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
-SERVER_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
-DEFAULT_FROM_EMAIL = os.getenv('CODE_DOCS_EMAIL_NAME')
+SERVER_EMAIL = os.getenv('CODE_DOCS_EMAIL')
+DEFAULT_FROM_EMAIL = os.getenv('CODE_DOCS_EMAIL')
 
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -88,7 +104,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(weeks=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(weeks=24),
     'ROTATE_REFRESH_TOKENS': True,
 }
@@ -128,6 +144,20 @@ WSGI_APPLICATION = 'CodeDocs_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
+# LOGGING = {
+#     'version': 1,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'django.db.backends': {
+#                     'level': 'DEBUG',
+#                     'handlers': ['console', ],
+#         },
+#     }
+# }
 
 DATABASES = {
     'default': {

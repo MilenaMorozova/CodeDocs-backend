@@ -19,5 +19,3 @@ class UserRegistrationSerializer(UserCreateSerializer):
 
     class Meta(UserCreateSerializer.Meta):
         fields = ('id', 'username', 'email', 'password', 'account_color')
-
-# TODO create necessary serializers, customize messengers in email
