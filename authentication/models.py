@@ -41,6 +41,7 @@ class CustomUser(AbstractBaseUser):
     account_color = models.CharField(max_length=7)
     is_active = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    last_login = None
 
     objects = CustomAccountManager()
 
@@ -52,6 +53,3 @@ class CustomUser(AbstractBaseUser):
     def save(self, *args, **kwargs):
         super(CustomUser, self).save(*args, **kwargs)
         return self
-
-    def get_short_name(self):
-        return self.username[:2]
