@@ -36,11 +36,11 @@ SITE_NAME = 'code_docs'
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # local-development
-        # "BACKEND": "channels_redis.core.RedisChannelLayer",
-        # "CONFIG": {
-        #     "hosts": [("127.0.0.1", 6379)],
-        # },
+        # "BACKEND": "channels.layers.InMemoryChannelLayer",  # local-development
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 
@@ -101,6 +101,7 @@ REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
     'rest_framework_simplejwt.authentication.JWTAuthentication',
   ),
+  'EXCEPTION_HANDLER': 'authentication.exception_handler.custom_exception_handler'
 }
 
 SIMPLE_JWT = {
