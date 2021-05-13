@@ -18,16 +18,15 @@ def custom_exception_handler(exc, context):
         response.data['status_code'] = response.status_code
 
     elif isinstance(exc, SMTPException):
-        print('SMTP')
-        res = CustomUser.objects.filter(username=context['request'].data['username'],
-                                        email=context['request'].data['email']).all().delete()
+        CustomUser.objects.filter(username=context['request'].data['username'],
+                                  email=context['request'].data['email']).all().delete()
 
         response = HttpResponse(content=' '. join(['This email', *exc.args[0], 'is invalid']),
                                 status=status.HTTP_400_BAD_REQUEST)
 
     else:
-        response = HttpResponse(content=str(exc) +
-                                        "\nproblem in server, please report the error to 'msmorozova_3@edu.hse.ru' "
+        response = HttpResponse(content=f"{str(exc)}\n problem in server, "
+                                        "please report the error to 'msmorozova_3@edu.hse.ru' "
                                         "and specify the date: " + str(datetime.datetime.now()),
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
