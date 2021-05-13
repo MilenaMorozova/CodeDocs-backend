@@ -1,8 +1,10 @@
+import base64
+import json
+
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-import base64
-import json
+from django.db import connections
 
 from .exceptions import (
     FileDoesNotExistException, UnableToDecodeFileException
@@ -47,10 +49,31 @@ class File(models.Model):
             raise UnableToDecodeFileException()
 
 
+def CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER(collector, field, sub_objs, using):
+    # delete from UserFiles
+    collector.collect(
+        sub_objs, source=field.remote_field.model, source_attr=field.name,
+        nullable=field.null, fail_on_restricted=False,
+    )
+    if field.null and not connections[using].features.can_defer_constraint_checks:
+        collector.add_field_update(field, None, sub_objs)
+
+    # delete from File
+    user_files = sub_objs.filter(access=Access.OWNER).all()
+    files_for_deleting = File.objects.filter(user_files__in=user_files)
+
+    collector.collect(
+        files_for_deleting, source=field.remote_field.model, source_attr=field.name,
+        nullable=field.null, fail_on_restricted=False,
+    )
+
+
 class UserFiles(models.Model):
 
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='user_files')
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='user_files')
+    user = models.ForeignKey(get_user_model(),
+                             on_delete=CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER,
+                             related_name='user_files')
     access = models.IntegerField(choices=Access.choices)
 
 
