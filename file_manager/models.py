@@ -61,10 +61,10 @@ def CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER(collector, field, sub_objs, 
     # delete from File
     user_files = sub_objs.filter(access=Access.OWNER).all()
     files_for_deleting = File.objects.filter(user_files__in=user_files)
-    another_field = field
+
     collector.collect(
-        files_for_deleting, source=another_field.remote_field.model, source_attr=another_field.name,
-        nullable=another_field.null, fail_on_restricted=False,
+        files_for_deleting, source=field.remote_field.model, source_attr=field.name,
+        nullable=field.null, fail_on_restricted=False,
     )
 
 
