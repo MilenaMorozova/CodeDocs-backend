@@ -18,8 +18,9 @@ def custom_exception_handler(exc, context):
         response.data['status_code'] = response.status_code
 
     elif isinstance(exc, SMTPException):
-        CustomUser.objects.filter(username=context['request'].data['username'],
-                                  email=context['request'].data['email']).all().delete()
+        if context['request'].stream.path == '/auth/users/':
+            CustomUser.objects.filter(username=context['request'].data['username'],
+                                      email=context['request'].data['email']).all().delete()
 
         response = HttpResponse(content=' '. join(['This email', *exc.args[0], 'is invalid']),
                                 status=status.HTTP_400_BAD_REQUEST)

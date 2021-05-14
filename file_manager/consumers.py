@@ -10,7 +10,7 @@ from channels.exceptions import StopConsumer
 from rest_framework import status
 
 from authentication.models import CustomUser
-from .models import File, UserFiles, Operations
+from .models import File, UserFiles, Operations, Access
 from .serializers import (
     UserWithAccessSerializer, FileSerializer, OperationSerializer
 )
@@ -143,6 +143,9 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                 'user': user_serializer.data})
 
     def apply_operation(self, event):
+        if self.access == Access.VIEWER:
+            return
+
         bd_operations = Operations.objects.filter(revision__gt=event['revision'],
                                                   file=self.file).order_by('revision').all()
         operations = [factory.create(operation.type, operation.position, operation.text) for operation in bd_operations]
@@ -175,6 +178,10 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         operation_serializer = OperationSerializer(operations_query, many=True)
         self.send_json({'type': event['type'],
                         'operations': operation_serializer.data})
+
+    def change_cursor_position(self, event):
+        self.send_to_group({**event,
+                            'user_id': self.scope['user'].pk})
 
     def run_file(self, event):
         pass

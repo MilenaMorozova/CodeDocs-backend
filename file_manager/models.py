@@ -31,7 +31,7 @@ class File(models.Model):
                                    related_name='files')
 
     link_access = models.IntegerField(default=Access.VIEWER, choices=Access.choices)
-    last_revision = models.IntegerField(default=0)
+    last_revision = models.BigIntegerField(default=0)
 
     def encode(self):
         return str(base64.b64encode(bytes(json.dumps({"file_id": self.pk}), encoding='UTF-8')), encoding='UTF-8')
@@ -49,7 +49,7 @@ class File(models.Model):
             raise UnableToDecodeFileException()
 
 
-def CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER(collector, field, sub_objs, using):
+def cascade_with_deleting_files_where_user_is_owner(collector, field, sub_objs, using):
     # delete from UserFiles
     collector.collect(
         sub_objs, source=field.remote_field.model, source_attr=field.name,
@@ -69,10 +69,9 @@ def CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER(collector, field, sub_objs, 
 
 
 class UserFiles(models.Model):
-
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='user_files')
     user = models.ForeignKey(get_user_model(),
-                             on_delete=CASCADE_WITH_DELETING_FILES_WHERE_USER_IS_OWNER,
+                             on_delete=cascade_with_deleting_files_where_user_is_owner,
                              related_name='user_files')
     access = models.IntegerField(choices=Access.choices)
 
@@ -87,5 +86,5 @@ class Operations(models.Model):
     position = models.IntegerField()
     text = models.TextField()
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='operations')
-    revision = models.IntegerField()
+    revision = models.BigIntegerField()
     channel_name = models.TextField()
