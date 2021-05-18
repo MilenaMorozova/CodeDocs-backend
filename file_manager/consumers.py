@@ -17,6 +17,7 @@ from .serializers import (
 from authentication.serializers import UserSerializer
 from .exceptions import FileManageException
 from .operation_factory import OperationFactory as factory
+from .run_file import RunFileThread
 
 
 class FileEditorConsumer(JsonWebsocketConsumer):
@@ -183,8 +184,13 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group({**event,
                             'user_id': self.scope['user'].pk})
 
-    def run_file(self, event):
-        pass
+    def run_file(self):
+        my_thread = RunFileThread(self.file.content, self.file.programming_language, self)
+        my_thread.run()
+
+    def file_output(self, file_output):
+        self.send_to_group({'type': 'file_output',
+                            'file_output': file_output})
 
     @remove_presence
     def disconnect(self, code):

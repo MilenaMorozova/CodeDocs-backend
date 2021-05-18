@@ -1,18 +1,18 @@
 import threading
 import uuid
 import os
-import subprocess
+import pexpect
 
 FILE_PATH = '/home/username/Code_Docs/running_files/'
-DOCKER_IMAGES = {'python': 'princesska/python',
-                 'js': 'princesska/js'}
+DOCKER_IMAGES = {'python': 'code_docs_python'}
 
 
 class RunFileThread(threading.Thread):
-    def __init__(self, file_content, programming_language):
+    def __init__(self, file_content, programming_language, consumer):
         super().__init__(name="run file")
         self.filename = self.create_file(file_content)
         self.docker_image = DOCKER_IMAGES[programming_language]
+        self.consumer = consumer
 
     def create_file(self, file_content):
         generated_filename = FILE_PATH + str(uuid.uuid4())
@@ -26,9 +26,22 @@ class RunFileThread(threading.Thread):
         return generated_filename
 
     def run(self) -> None:
-        program = f'docker run ' \
-                  f'--mount type=bind,source={self.filename},destination=/root/my_file,readonly {self.docker_image}'
-        process = subprocess.Popen(program)
-        code = process.wait()
+        program = ['docker', 'run', '--mount',
+                    f'type=bind,source={self.filename},destination=/root/my_file,readonly', '--rm', '-it',
+                    self.docker_image]
+        print('Create subprocess')
 
-        print(code)
+        command = ' '.join(program)
+        child = pexpect.spawn(command, encoding='utf-8')
+        # child.delaybeforesend = 0.5
+        while True:
+            output = child.readline()
+            print(output, 'Child is alive', child.isalive())
+            self.consumer.file_output(output)
+
+            if child.isalive() and not output:
+                print("I'm here")
+
+            if not child.isalive() and not output:
+                print("I'm NOT here")
+                break
