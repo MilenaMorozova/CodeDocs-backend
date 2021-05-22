@@ -16,7 +16,7 @@ from .serializers import (
 )
 from authentication.serializers import UserSerializer
 from .exceptions import FileManageException
-from .operation_factory import OperationFactory as factory
+from .operation_factory import OperationFactory as Factory
 from .run_file import RunFileThread
 
 
@@ -150,10 +150,10 @@ class FileEditorConsumer(JsonWebsocketConsumer):
 
         bd_operations = Operations.objects.filter(revision__gt=event['revision'],
                                                   file=self.file).order_by('revision').all()
-        operations = [factory.create(operation.type, operation.position, operation.text) for operation in bd_operations]
+        operations = [Factory.create(operation.type, operation.position, operation.text) for operation in bd_operations]
 
         # operation transformation
-        current_operation = factory.create(event['operation']['type'],
+        current_operation = Factory.create(event['operation']['type'],
                                            event['operation']['position'],
                                            event['operation']['text'])
         for operation in operations:

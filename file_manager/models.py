@@ -1,5 +1,4 @@
-import base64
-import json
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -7,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db import connections
 
 from .exceptions import (
-    FileDoesNotExistException, UnableToDecodeFileException
+    FileDoesNotExistException
 )
 
 
@@ -22,6 +21,7 @@ class File(models.Model):
         PYTHON = "python"
         JS = "js"
 
+    uuid = models.CharField(max_length=128, default=str(uuid.uuid4()))
     name = models.CharField(max_length=248)
     programming_language = models.CharField(choices=ProgrammingLanguage.choices, max_length=50)
     content = models.TextField()
@@ -34,19 +34,14 @@ class File(models.Model):
     last_revision = models.BigIntegerField(default=0)
 
     def encode(self):
-        return str(base64.b64encode(bytes(json.dumps({"file_id": self.pk}), encoding='UTF-8')), encoding='UTF-8')
+        return self.uuid
 
     @staticmethod
     def decode(data: str):
         try:
-            b_data = bytes(data, encoding='UTF-8')
-            decode_data = base64.b64decode(b_data)
-            file_id = json.loads(decode_data, encoding='UTF-8')['file_id']
-            return File.objects.get(pk=file_id)
+            return File.objects.get(uuid=data)
         except File.DoesNotExist:
             raise FileDoesNotExistException()
-        except Exception:
-            raise UnableToDecodeFileException()
 
 
 def cascade_with_deleting_files_where_user_is_owner(collector, field, sub_objs, using):
