@@ -1,7 +1,10 @@
 import threading
 import uuid
 import os
+
 import pexpect
+
+from .exceptions import FileDoesNotExistException
 
 FILE_PATH = '/home/username/Code_Docs/running_files/'
 DOCKER_IMAGES = {'python': 'code_docs_python'}
@@ -25,9 +28,15 @@ class RunFileThread(threading.Thread):
 
         return generated_filename
 
+    def delete_file(self):
+        try:
+            os.remove(self.filename)
+        except OSError:
+            raise FileDoesNotExistException()
+
     def run(self) -> None:
         program = ['docker', 'run', '--mount',
-                    f'type=bind,source={self.filename},destination=/root/my_file,readonly', '--rm', '-it',
+                    f'type=bind,source={self.filename},destination=/root/my_file,readonly', '--rm', '-i',
                     self.docker_image]
         print('Create subprocess')
 
@@ -45,3 +54,5 @@ class RunFileThread(threading.Thread):
             if not child.isalive() and not output:
                 print("I'm NOT here")
                 break
+
+        self.delete_file()
