@@ -7,7 +7,7 @@ from .exceptions import NotUniqueFieldException, UserAlreadyExistException
 
 class AuthBackend(AllowAllUsersModelBackend):
     @staticmethod
-    def is_correct_username(username):
+    def is_unique_username(username):
         if CustomUser.objects.filter(username=username).exists():
             raise NotUniqueFieldException('username')
         return True

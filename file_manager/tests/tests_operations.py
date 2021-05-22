@@ -3,12 +3,6 @@ from unittest import TestCase
 from file_manager.operations import Insert, Delete, NeutralOperation
 
 
-def run_operations(test_class, operation1, operation2, text, result):
-    current_text = operation1.execute(text)
-    current_text = (operation2 / operation1).execute(current_text)
-    test_class.assertEqual(current_text, result)
-
-
 class InsertInsertTestCase(TestCase):
     def setUp(self) -> None:
         self.text = "Michael Scofield"

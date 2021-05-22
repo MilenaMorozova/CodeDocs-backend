@@ -1,6 +1,7 @@
-from .models import File, UserFiles, Access
 import uuid
+
 from django.conf import settings
+from .models import File, UserFiles, Access
 
 from .exceptions import (
     NoRequiredFileAccess, FileDoesNotExistException
@@ -17,6 +18,7 @@ class FileManager:
                                  user=owner,
                                  access=Access.OWNER)
 
+        # inherit the user's relationship with the previous file
         if prev_file_id:
             participants = []
             for access_to_file in UserFiles.objects.filter(file__id=prev_file_id).all():
@@ -65,21 +67,5 @@ class FileManager:
                 raise NoRequiredFileAccess('VIEWER OR EDITOR')
             access_to_file.delete()
 
-        except UserFiles.DoesNotExist:
-            raise NoRequiredFileAccess('ANY')
-
-    @staticmethod
-    def download_file(file_id, user):
-        try:
-            file = File.objects.get(pk=file_id)
-            UserFiles.objects.get(user=user, file=file_id)
-
-            download_filename = str(uuid.uuid4())
-            file_link = f"/{settings.DOMAIN}/downloads/{download_filename}"
-            with open(file_link, 'w') as download_file:
-                download_file.write(file.content)
-
-        except File.DoesNotExist:
-            raise FileDoesNotExistException()
         except UserFiles.DoesNotExist:
             raise NoRequiredFileAccess('ANY')

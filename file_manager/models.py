@@ -83,8 +83,8 @@ class Operations(models.Model):
         DELETE = 2
 
     type = models.IntegerField(choices=Type.choices)
-    position = models.IntegerField()
-    text = models.TextField()
+    position = models.IntegerField(blank=True, null=True)
+    text = models.TextField(blank=True, null=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='operations')
     revision = models.BigIntegerField()
     channel_name = models.TextField()

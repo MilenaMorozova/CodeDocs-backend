@@ -138,6 +138,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         else:
             another_user.access = event['new_access']
             another_user.save()
+            self.access = another_user.access
 
             user_serializer = UserWithAccessSerializer(another_user)
             self.send_to_group({'type': event['type'],

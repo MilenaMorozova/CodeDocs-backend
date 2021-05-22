@@ -16,7 +16,7 @@ auth_backend = AuthBackend()
 @catch_view_exception(['username'], auth_logger)
 def check_username(request):
     try:
-        auth_backend.is_correct_username(request.data['username'])
+        auth_backend.is_unique_username(request.data['username'])
         return HttpResponse(status=status.HTTP_200_OK)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)

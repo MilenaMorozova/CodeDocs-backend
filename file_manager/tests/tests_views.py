@@ -21,7 +21,11 @@ class CreateFileTestCase(TestCase):
 
         self.client.force_authenticate(user=self.user)
 
-    def test_authorized_user_create_file(self):
+    def tearDown(self) -> None:
+        CustomUser.objects.all().delete()
+        File.objects.all().delete()
+
+    def test_authorized_user__create_file(self):
         file_params = {'name': "file_1",
                        'programming_language': "python"}
         response = self.client.post('/file/create_file/', file_params)
@@ -32,16 +36,42 @@ class CreateFileTestCase(TestCase):
         file = File.objects.get(**file_params)
         self.assertTrue(UserFiles.objects.filter(user=self.user, file=file, access=Access.OWNER))
 
-    def test_authorized_user_filename_not_given(self):
+    def test_authorized_user__filename_not_given(self):
         response = self.client.post('/file/create_file/', {'programming_language': "python"})
         self.assertContains(response, "name not given", status_code=status.HTTP_400_BAD_REQUEST)
 
-    def test_authorized_user_pl_not_given(self):
+    def test_authorized_user__pl_not_given(self):
         response = self.client.post('/file/create_file/', {'name': "test_file2"})
         self.assertContains(response, "programming_language not given", status_code=status.HTTP_400_BAD_REQUEST)
 
+    def test_save_participants_from_prev_file__two_participant(self):
+        file_params = {'name': "file_1",
+                       'programming_language': "python"}
+        _ = self.client.post('/file/create_file/', file_params)
 
-class MyFileTestCase(TestCase):
+        another_client = APIClient()
+        another_user = CustomUser.objects.create_user(username='Michael Scofield',
+                                                      email='134@mail.ru',
+                                                      password='12gh345')
+        another_client.force_authenticate(user=another_user)
+        file = File.objects.last()
+        UserFiles.objects.create(user=another_user, file=file, access=Access.EDITOR)
+
+        another_file = {'name': "super_file",
+                        'programming_language': "js",
+                        'prev_file_id': file.pk}
+        response = another_client.post('/file/create_file/', another_file)
+
+        create_file_response = json.loads(response.content)
+        new_file = File.objects.last()
+        right_create_file_response = FileWithoutContentSerializer(new_file).data
+        self.assertDictEqual(create_file_response, right_create_file_response)
+
+        self.assertTrue(UserFiles.objects.filter(user=self.user, file=new_file, access=Access.EDITOR).exists())
+        self.assertTrue(UserFiles.objects.filter(user=another_user, file=new_file, access=Access.OWNER).exists())
+
+
+class MyFilesTestCase(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
 
@@ -50,6 +80,10 @@ class MyFileTestCase(TestCase):
                                                    password='12345')
 
         self.client.force_authenticate(user=self.user)
+
+    def tearDown(self) -> None:
+        File.objects.all().delete()
+        CustomUser.objects.all().delete()
 
     def test_no_files(self):
         response = self.client.get('/file/my')
@@ -79,6 +113,7 @@ class DeleteFileTestsCase(TestCase):
 
     def tearDown(self) -> None:
         File.objects.all().delete()
+        CustomUser.objects.all().delete()
 
     def test_no_file_id(self):
         response = self.client.post('/file/delete_file/')
@@ -123,6 +158,7 @@ class GenerateLinkTestCase(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def tearDown(self) -> None:
+        CustomUser.objects.all().delete()
         File.objects.all().delete()
 
     def test_no_file_id(self):
@@ -145,3 +181,40 @@ class GenerateLinkTestCase(TestCase):
         encode_content = str(response.content, encoding='UTF-8').split('/')[-1]
         file = File.decode(encode_content)
         self.assertEqual(file.pk, self.user.files.get().pk)
+
+
+class LeaveFileTestCase(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+        self.user = CustomUser.objects.create_user(username='Igor Mashtakov',
+                                                   email='111@mail.ru',
+                                                   password='12345')
+
+        self.client.force_authenticate(user=self.user)
+
+        file_params = {'name': "file_1",
+                       'programming_language': "python"}
+        _ = self.client.post('/file/create_file/', file_params)
+        self.file = File.objects.last()
+
+    def tearDown(self) -> None:
+        File.objects.all().delete()
+        CustomUser.objects.all().delete()
+
+    def test_no_such_file(self):
+        response = self.client.post('/file/leave_file/', {'file_id': self.file.pk + 1})
+        self.assertContains(response, 'You must be ANY that to do this', status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
+    def test_owner_leave_file(self):
+        response = self.client.post('/file/leave_file/', {'file_id': self.file.pk})
+        self.assertContains(response, 'You must be VIEWER OR EDITOR that to do this',
+                            status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
+    def test_editor_leave_file(self):
+        user_file_relation = UserFiles.objects.get()
+        user_file_relation.access = Access.EDITOR
+        user_file_relation.save()
+
+        response = self.client.post('/file/leave_file/', {'file_id': self.file.pk})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
