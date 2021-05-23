@@ -95,7 +95,7 @@ class CheckEmail(TestCase):
 
     def test_email_is_correct(self):
         email = 'masht@mail.ru'
-        self.assertTrue(self.auth_backend.is_correct_email(email))
+        self.assertTrue(self.auth_backend.is_unique_email(email))
 
     def test_email_already_exist(self):
         username = 'Igor Mashtakov'
@@ -103,4 +103,4 @@ class CheckEmail(TestCase):
         password = '12345'
         self.auth_backend.create_user(username, email, password)
         with self.assertRaises(NotUniqueFieldException):
-            self.auth_backend.is_correct_email(email)
+            self.auth_backend.is_unique_email(email)

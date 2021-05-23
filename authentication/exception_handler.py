@@ -22,7 +22,7 @@ def custom_exception_handler(exc, context):
             CustomUser.objects.filter(username=context['request'].data['username'],
                                       email=context['request'].data['email']).all().delete()
 
-        response = HttpResponse(content=' '. join(['This email', *exc.args[0], 'is invalid']),
+        response = HttpResponse(content=str(exc),
                                 status=status.HTTP_400_BAD_REQUEST)
 
     else:

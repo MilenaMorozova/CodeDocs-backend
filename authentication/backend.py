@@ -13,7 +13,7 @@ class AuthBackend(AllowAllUsersModelBackend):
         return True
 
     @staticmethod
-    def is_correct_email(email):
+    def is_unique_email(email):
         if CustomUser.objects.filter(email=email).exists():
             raise NotUniqueFieldException('email')
         return True

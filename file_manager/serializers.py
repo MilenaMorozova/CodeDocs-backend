@@ -7,7 +7,7 @@ from authentication.serializers import UserSerializer
 class FileWithoutContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        exclude = ('created', 'users', 'content')
+        exclude = ('uuid', 'created', 'users', 'content')
 
 
 class UserFilesSerializer(serializers.ModelSerializer):
