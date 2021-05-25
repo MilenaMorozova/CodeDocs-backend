@@ -18,6 +18,7 @@ from authentication.serializers import UserSerializer
 from .exceptions import FileManageException
 from .operation_factory import OperationFactory as Factory
 from .run_file import RunFileThread
+from .running_files import RUNNING_FILES
 
 
 class FileEditorConsumer(JsonWebsocketConsumer):
@@ -60,7 +61,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                                       file=self.file,
                                                       access=self.file.link_access)
         self.access = access_to_file.access
-
+        
         # Join room group
         async_to_sync(self.channel_layer.group_add)(self.room_group_name,
                                                     self.channel_name)
@@ -73,6 +74,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             user_serializer = UserWithAccessSerializer(access_to_file)
             self.send_to_group({'type': 'new_user',
                                 'user': user_serializer.data})
+        self.send_json({'location': 'END CONNECTION'})
 
     def close_connect(self, http_code):
         self.close(4000 + http_code)
@@ -185,13 +187,22 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group({**event,
                             'user_id': self.scope['user'].pk})
 
-    def run_file(self):
-        my_thread = RunFileThread(self.file.content, self.file.programming_language, self)
-        my_thread.run()
+    def run_file(self, event):
+        self.send_json({"type": "START run_file"})
+        if RUNNING_FILES.get(self.file.pk) is not None:
+            self.send_json({"type": "run_file",
+                            "error_code": "This file is running"})
+        else:    
+            my_thread = RunFileThread(self.file.content, self.file.programming_language, self)
+            my_thread.start()
+            RUNNING_FILES[self.file.pk] = my_thread
 
     def file_output(self, file_output):
         self.send_to_group({'type': 'file_output',
                             'file_output': file_output})
+
+    def file_input(self, event):
+         RUNNING_FILES[self.file.pk].add_input(event['file_input'])
 
     @remove_presence
     def disconnect(self, code):
