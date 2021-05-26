@@ -44,6 +44,7 @@ class RunFileThread(threading.Thread):
         print('Create subprocess')
         command = ' '.join(program)
         child = pexpect.spawn(command, encoding='utf-8')
+
         try:
             while True:
                 # force process to stop
@@ -55,11 +56,9 @@ class RunFileThread(threading.Thread):
                     child.write(self.inputs.pop(0))
 
                 output = child.read(1)
-    #            print(output, 'Child is alive', child.isalive())
                 self.consumer.file_output(output)
 
                 if not child.isalive() and not output:
-                    print("I'm NOT here")
                     break
         except pexpect.EOF:
             self.consumer.file_output("Nothing for reading")
