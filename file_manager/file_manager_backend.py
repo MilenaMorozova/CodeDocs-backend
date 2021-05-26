@@ -1,6 +1,3 @@
-import uuid
-
-from django.conf import settings
 from .models import File, UserFiles, Access
 
 from .exceptions import (

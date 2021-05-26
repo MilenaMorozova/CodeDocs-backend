@@ -18,7 +18,7 @@ from authentication.serializers import UserSerializer
 from .exceptions import FileManageException
 from .operation_factory import OperationFactory as Factory
 from .run_file import RunFileThread
-from .running_files import RUNNING_FILES
+from .launched_files import LaunchedFilesManager
 
 
 class FileEditorConsumer(JsonWebsocketConsumer):
@@ -29,6 +29,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.room_group_name = None
         self.room = None
         self.access = None
+        self.launched_file_manager = LaunchedFilesManager()
 
     def connect(self):
         self.accept()
@@ -61,7 +62,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                                       file=self.file,
                                                       access=self.file.link_access)
         self.access = access_to_file.access
-        
+
         # Join room group
         async_to_sync(self.channel_layer.group_add)(self.room_group_name,
                                                     self.channel_name)
@@ -188,21 +189,36 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                             'user_id': self.scope['user'].pk})
 
     def run_file(self, event):
-        self.send_json({"type": "START run_file"})
-        if RUNNING_FILES.get(self.file.pk) is not None:
+        if self.launched_file_manager.file_is_running(file_id=self.file.pk):
             self.send_json({"type": "run_file",
-                            "error_code": "This file is running"})
-        else:    
+                            "error_code": 4000 + status.HTTP_409_CONFLICT})
+        else:
             my_thread = RunFileThread(self.file.content, self.file.programming_language, self)
-            my_thread.start()
-            RUNNING_FILES[self.file.pk] = my_thread
+            try:
+                self.launched_file_manager.add_running_file(self.file.pk, my_thread)
+
+                self.send_json({"type": "START run_file"})
+                my_thread.start()
+            except FileManageException as e:
+                self.send_json({"type": "run_file",
+                                "error_code": 4000 + e.response_status})
 
     def file_output(self, file_output):
         self.send_to_group({'type': 'file_output',
                             'file_output': file_output})
 
     def file_input(self, event):
-         RUNNING_FILES[self.file.pk].add_input(event['file_input'])
+        self.launched_file_manager.get_thread_by_file_id(self.file.pk).add_input(event['file_input'])
+
+    def stop_file(self, event):
+        try:
+            file_thread = self.launched_file_manager.get_thread_by_file_id(self.file.pk)
+            file_thread.close()
+
+            self.launched_file_manager.remove_stopped_file(self.file.pk)
+        except FileManageException as e:
+            self.send_json({"type": "stop_file",
+                            "error_code": 4000 + e.response_status})
 
     @remove_presence
     def disconnect(self, code):

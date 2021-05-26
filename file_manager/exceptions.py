@@ -20,3 +20,13 @@ class FileDoesNotExistException(FileManageException):
 class UnableToDecodeFileException(FileManageException):
     def __init__(self):
         super().__init__("Unable to decode file", status.HTTP_400_BAD_REQUEST)
+
+
+class FileAlreadyRunningException(FileManageException):
+    def __init__(self, file):
+        super().__init__(f"The file {file} is already running", status.HTTP_409_CONFLICT)
+
+
+class FileNotRunningException(FileManageException):
+    def __init__(self, file):
+        super().__init__(f"The file {file} is not running", status.HTTP_409_CONFLICT)
