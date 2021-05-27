@@ -1,12 +1,18 @@
 import threading
 import uuid
 import os
+import traceback
 
 import pexpect
+
+from helpers.logger import create_logger
+
 
 FILE_PATH = '/home/username/Code_Docs/running_files/'
 DOCKER_IMAGES = {'python': 'code_docs_python'}
 
+
+run_file_logger = create_logger("run_file_logger")
 
 class RunFileThread(threading.Thread):
     def __init__(self, file_content, programming_language, consumer=1):
@@ -30,46 +36,67 @@ class RunFileThread(threading.Thread):
 
     def delete_file(self):
         try:
+            run_file_logger.info(f"delete_file")
             os.remove(self.filename)
         except OSError:
+            run_file_logger.info("file was deleted")
             pass
         
     def add_input(self, file_input):
+        run_file_logger.info(f"ADD INPUT {file_input}")
         self.inputs.append(file_input)
+        run_file_logger.info(f"INPUTS NOW {self.inputs}")
 
     def run(self) -> None:
+        run_file_logger.info("start RunFileThread")
         program = ['docker', 'run', '--mount',
                     f'type=bind,source={self.filename},destination=/root/my_file,readonly', '--rm', '-it',
                     self.docker_image]
         print('Create subprocess')
         command = ' '.join(program)
         child = pexpect.spawn(command, encoding='utf-8')
-
+        child.timeout = 1
+        child.delimiter = pexpect.TIMEOUT
+        run_file_logger.info("create process")
         try:
             while True:
                 # force process to stop
                 if self.__close_force:
+                    run_file_logger.info("force close child")
                     child.close(force=True)
                     break
 
                 if self.inputs:
-                    child.write(self.inputs.pop(0))
+                    run_file_logger.info(f"before send input - {self.inputs[-1]}")
+                    child.sendline(self.inputs.pop(0))
+                
+                try:
+                    run_file_logger.info(f"BEFORE READLINE child before - {child.before}")
+                    run_file_logger.info(f"BEFORE READLINE child after - {child.after}, {type(child.after)}")
+                    output = child.readline()
+                    if child.after == pexpect.TIMEOUT:
+                        run_file_logger.info(f"in if")
+                        output = child.read(len(child.before))
+                    run_file_logger.info(f"AFTER READLINE child before - {child.before}")
+                    run_file_logger.info(f"AFTER READLINE child after - {child.after}")
+                    if output:
+                        self.consumer.file_output(output)
+                except Exception as exc:
+                    run_file_logger.error(f"{__name__} {exc} {traceback.format_exc()}")
 
-                output = child.read(1)
-                self.consumer.file_output(output)
-
-                if not child.isalive() and not output:
+                if not child.isalive():
+                    if child.before:
+                        self.consumer.file_output(child.before)
                     break
-        except pexpect.EOF:
-            self.consumer.file_output("Nothing for reading")
-            child.close(force=True)
-        except pexpect.TIMEOUT:
+        except Exception as exc:
+            run_file_logger.error(f"123 {__name__} {exc} {traceback.format_exc()}")
             self.consumer.file_output("Your time is over")
             child.close(force=True)
-        print("EXIT CODE", child.exitstatus)
-        self.consumer.send_json({'type': 'END run_file', 'exit_code': child.exitstatus})
-        self.consumer.launched_file_manager.remove_stopped_file(self.consumer.file.pk)
-        self.delete_file()
+        finally:
+            print("EXIT CODE", child.exitstatus)
+            self.consumer.send_to_group({'type': 'END run_file', 'exit_code': child.exitstatus})
+            self.consumer.launched_file_manager.remove_stopped_file(self.consumer.file.pk)
+            self.delete_file()
 
     def close(self):
         self.__close_force = True

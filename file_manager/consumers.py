@@ -71,8 +71,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                         'channel_name': self.channel_name})
 
         self.send_json({'type': 'file_status',
-                        'file_status': "" if self.launched_file_manager.file_is_running(self.file.pk) else "not" +
-                                                                                                           "launched"})
+                        'is_running': self.launched_file_manager.file_is_running(self.file.pk)})
 
         if Presence.objects.filter(user=self.scope['user'], room=self.room).count() == 1:
             user_serializer = UserWithAccessSerializer(access_to_file)
@@ -138,7 +137,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
     def change_user_access(self, event):
         another_user = UserFiles.objects.get(user__id=event['another_user_id'], file=self.file)
 
-        current_user_access = UserFiles.objects.get(user__id=self.scope['user'], file=self.file)
+        current_user_access = UserFiles.objects.get(user=self.scope['user'], file=self.file).access
         if current_user_access < another_user.access:
             self.send_error(event['type'], status.HTTP_403_FORBIDDEN)
         elif current_user_access < event['new_access']:
@@ -152,7 +151,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                                 'user': user_serializer.data})
 
     def apply_operation(self, event):
-        current_user_access = UserFiles.objects.get(user__id=self.scope['user'], file=self.file)
+        current_user_access = UserFiles.objects.get(user=self.scope['user'], file=self.file).access
         if current_user_access == Access.VIEWER:
             return
 
@@ -194,6 +193,8 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                             'user_id': self.scope['user'].pk})
 
     def run_file(self, event):
+        self.file.refresh_from_db()
+
         if self.launched_file_manager.file_is_running(file_id=self.file.pk):
             self.send_error(event['type'], status.HTTP_409_CONFLICT)
         else:
@@ -202,7 +203,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             try:
                 self.launched_file_manager.add_running_file(self.file.pk, my_thread)
 
-                self.send_json({"type": "START run_file"})
+                self.send_to_group({"type": "START run_file"})
                 my_thread.start()
             except FileManageException as e:
                 self.send_error(event['type'], e.response_status)
