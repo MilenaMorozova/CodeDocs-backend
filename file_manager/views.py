@@ -5,14 +5,12 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 
 from helpers.helper import catch_view_exception
-from helpers.logger import create_logger
+from .logger import file_manager_logger
 from .file_manager_backend import FileManager
 from .exceptions import FileManageException
 from .serializers import (
     UserFilesSerializer, FileWithoutContentSerializer
 )
-
-file_manager_logger = create_logger('file_manager_logger')
 
 
 @csrf_exempt

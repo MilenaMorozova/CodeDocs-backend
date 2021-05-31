@@ -19,6 +19,7 @@ from .exceptions import FileManageException
 from .operation_factory import OperationFactory as Factory
 from .run_file import RunFileThread
 from .launched_files import LaunchedFilesManager
+from .catch_websocket_exceptions import catch_websocket_exception
 
 
 class FileEditorConsumer(JsonWebsocketConsumer):
@@ -41,16 +42,16 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             token_user = jwt.get_user(validated_token)
             self.scope['user'] = CustomUser.objects.get(pk=token_user.pk)
         except InvalidToken as e:
-            self.close_connect(e.status_code)
+            self.close_connection(e.status_code)
 
         if not self.scope['user'].is_authenticated:
-            self.close_connect(status.HTTP_401_UNAUTHORIZED)
+            self.close_connection(status.HTTP_401_UNAUTHORIZED)
 
         # decode file
         try:
             self.file = File.decode(self.scope['url_route']['kwargs']['encode_file'])
         except FileManageException as e:
-            self.close_connect(e.response_status)
+            self.close_connection(e.response_status)
 
         self.room_group_name = f"file_{self.file.pk}"
 
@@ -78,7 +79,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             self.send_to_group({'type': 'new_user',
                                 'user': user_serializer.data})
 
-    def close_connect(self, http_code):
+    def close_connection(self, http_code):
         self.close(4000 + http_code)
         raise StopConsumer()
 
@@ -90,20 +91,23 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             self.room_group_name, {'type': 'send_content',
                                    'content': content})
 
-    def send_error(self, package_type, error_code):
+    def send_error(self, package_type, error_code, message=""):
         self.send_json({"type": package_type,
-                        "error_code": 4000 + error_code})
+                        "error_code": 4000 + error_code,
+                        "message": message})
 
     @touch_presence
     def receive_json(self, content, **kwargs):
         getattr(self, content['type'])(content)
 
+    @catch_websocket_exception([])
     def file_info(self, event):
         self.file.refresh_from_db()
         file_serializer = FileSerializer(self.file)
         self.send_json({**event,
                         'file': file_serializer.data})
 
+    @catch_websocket_exception([])
     def active_users(self, event):
         users = self.room.get_users()
         users_with_accesses = UserFiles.objects.filter(user__in=users, file=self.file).all()
@@ -111,12 +115,14 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_json({**event,
                         'users': serializer.data})
 
+    @catch_websocket_exception([])
     def all_users(self, event):
         all_users = UserFiles.objects.filter(file=self.file).all()
         serializer = UserWithAccessSerializer(all_users, many=True)
         self.send_json({**event,
                         'users': serializer.data})
 
+    @catch_websocket_exception(['config'])
     def change_file_config(self, event):
         self.file.refresh_from_db()
         for field in event['config']:
@@ -128,12 +134,14 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group({'type': event['type'],
                             'file': file_serializer.data})
 
+    @catch_websocket_exception(['new_access'])
     def change_link_access(self, event):
         self.file.refresh_from_db()
         self.file.link_access = event['new_access']
         self.file.save()
         self.send_to_group(event)
 
+    @catch_websocket_exception(['another_user_id', 'new_access'])
     def change_user_access(self, event):
         another_user = UserFiles.objects.get(user__id=event['another_user_id'], file=self.file)
 
@@ -150,6 +158,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             self.send_to_group({'type': event['type'],
                                 'user': user_serializer.data})
 
+    @catch_websocket_exception(['revision', 'operation'])
     def apply_operation(self, event):
         current_user_access = UserFiles.objects.get(user=self.scope['user'], file=self.file).access
         if current_user_access == Access.VIEWER:
@@ -181,6 +190,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_to_group({'type': event['type'],
                             'operation': operation_serializer.data})
 
+    @catch_websocket_exception(['revision'])
     def operation_history(self, event):
         operations_query = Operations.objects.filter(revision__gt=event['revision']).order_by('revision').all()
 
@@ -188,10 +198,12 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         self.send_json({'type': event['type'],
                         'operations': operation_serializer.data})
 
+    @catch_websocket_exception(['position'])
     def change_cursor_position(self, event):
         self.send_to_group({**event,
                             'user_id': self.scope['user'].pk})
 
+    @catch_websocket_exception([])
     def run_file(self, event):
         self.file.refresh_from_db()
 
@@ -214,9 +226,11 @@ class FileEditorConsumer(JsonWebsocketConsumer):
                             'index': self.file_output_index})
         self.file_output_index += 1
 
+    @catch_websocket_exception(['file_input'])
     def file_input(self, event):
         self.launched_file_manager.get_thread_by_file_id(self.file.pk).add_input(event['file_input'])
 
+    @catch_websocket_exception([])
     def stop_file(self, event):
         try:
             file_thread = self.launched_file_manager.get_thread_by_file_id(self.file.pk)
@@ -230,6 +244,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
     @remove_presence
     def disconnect(self, code):
         # leave room
+        print('In disconnect')
         if not Presence.objects.filter(user=self.scope['user'], room=self.room).exists():
             user_serializer = UserSerializer(self.scope['user'])
             self.send_to_group({'type': 'delete_user',

@@ -14,6 +14,7 @@ DOCKER_IMAGES = {'python': 'code_docs_python'}
 
 run_file_logger = create_logger("run_file_logger")
 
+
 class RunFileThread(threading.Thread):
     def __init__(self, file_content, programming_language, consumer=1):
         super().__init__(name="run file")
