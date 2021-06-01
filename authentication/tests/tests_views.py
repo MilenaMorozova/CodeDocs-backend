@@ -6,19 +6,10 @@ from rest_framework import status
 from authentication.backend import AuthBackend
 
 
-class TestLogger:
-    def error(self, error):
-        pass
-
-
-def create_test_logger(*args): return TestLogger()
-
-
 class CheckUsername(TestCase):
     def setUp(self) -> None:
         self.client = Client()
 
-    # @patch('helpers.logger.create_logger', 'create_test_logger')
     def test_username_is_unique(self):
         response = self.client.post('/auth/check_username/', {'username': 'Igor Mashtakov'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -33,7 +24,6 @@ class CheckUsername(TestCase):
         self.assertEqual(response.content, b'This username is already in use')
 
 
-@patch('helpers.logger.create_logger', 'create_test_logger')
 class CheckEmail(TestCase):
     def setUp(self) -> None:
         self.client = Client()
