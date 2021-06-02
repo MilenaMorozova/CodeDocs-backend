@@ -16,12 +16,18 @@ class Access(models.IntegerChoices):
     OWNER = 2
 
 
+class FileManager(models.Manager):
+    def create(self, **obd_data):
+        obd_data['id'] = str(uuid.uuid4())
+        return super().create(**obd_data)
+
+
 class File(models.Model):
     class ProgrammingLanguage(models.TextChoices):
         PYTHON = "python"
         JS = "js"
 
-    uuid = models.CharField(max_length=128, default=str(uuid.uuid4()))
+    id = models.CharField(max_length=128, primary_key=True, db_index=True)
     name = models.CharField(max_length=248)
     programming_language = models.CharField(choices=ProgrammingLanguage.choices, max_length=50)
     content = models.TextField()
@@ -33,13 +39,15 @@ class File(models.Model):
     link_access = models.IntegerField(default=Access.VIEWER, choices=Access.choices)
     last_revision = models.BigIntegerField(default=0)
 
+    objects = FileManager()
+
     def encode(self):
-        return self.uuid
+        return self.id
 
     @staticmethod
     def decode(data: str):
         try:
-            return File.objects.get(uuid=data)
+            return File.objects.get(id=data)
         except File.DoesNotExist:
             raise FileDoesNotExistException()
 

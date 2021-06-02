@@ -1,5 +1,4 @@
 import threading
-import uuid
 import os
 import traceback
 
@@ -16,16 +15,16 @@ run_file_logger = create_logger("run_file_logger")
 
 
 class RunFileThread(threading.Thread):
-    def __init__(self, file_content, programming_language, consumer=1):
+    def __init__(self, file_name, file_content, programming_language, consumer=1):
         super().__init__(name="run file")
-        self.filename = self.create_file(file_content)
+        self.filename = self.create_file(file_name, file_content)
         self.docker_image = DOCKER_IMAGES[programming_language]
         self.consumer = consumer
         self.inputs = []
         self.__close_force = False
 
-    def create_file(self, file_content):
-        generated_filename = FILE_PATH + str(uuid.uuid4())
+    def create_file(self, file_name, file_content):
+        generated_filename = FILE_PATH + file_name
 
         if not os.path.exists(FILE_PATH):
             os.makedirs(FILE_PATH)

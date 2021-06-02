@@ -47,9 +47,9 @@ class FileEditorConsumer(JsonWebsocketConsumer):
         if not self.scope['user'].is_authenticated:
             self.close_connection(status.HTTP_401_UNAUTHORIZED)
 
-        # decode file
+        # get file
         try:
-            self.file = File.decode(self.scope['url_route']['kwargs']['encode_file'])
+            self.file = File.decode(self.scope['url_route']['kwargs']['file_id'])
         except FileManageException as e:
             self.close_connection(e.response_status)
 
@@ -211,7 +211,7 @@ class FileEditorConsumer(JsonWebsocketConsumer):
             self.send_error(event['type'], status.HTTP_409_CONFLICT)
         else:
             # create RunFilThread when the file is not running
-            my_thread = RunFileThread(self.file.content, self.file.programming_language, self)
+            my_thread = RunFileThread(self.file.pk, self.file.content, self.file.programming_language, self)
             try:
                 self.launched_file_manager.add_running_file(self.file.pk, my_thread)
 
