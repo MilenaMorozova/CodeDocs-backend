@@ -53,13 +53,6 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.token_patcher.stop()
         self.user_patcher.stop()
 
-    async def test_connection__unable_to_decode_file(self):
-        communicator = WebsocketCommunicator(application.application_mapping["websocket"], "/files/123/1278/")
-        await communicator.connect()
-
-        answer = await communicator.output_queue.get()
-        self.assertEqual(answer, {'type': 'websocket.close', 'code': 4400})
-
     async def test_connection__file_does_not_exist(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
                                              f"/files/yuyu/1278/")
@@ -80,9 +73,10 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         # user without access to file
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
+        # channel_name
         channel_name_answer = await communicator.output_queue.get()
         self.assertEqual(channel_name_answer['type'], 'websocket.send')
 
@@ -91,6 +85,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         right_channel_name_json = {'type': "channel_name",
                                    'channel_name': channel_name}
         self.assertDictEqual(channel_name_json, right_channel_name_json)
+
+        # file status
+        file_status_answer = await communicator.output_queue.get()
+        file_status_json = json.loads(file_status_answer['text'])
+        right_file_status_json = {'type': 'file_status',
+                                  'is_running': False}
+        self.assertDictEqual(file_status_json, right_file_status_json)
 
         # user without access to file
         new_user_answer = await communicator.output_queue.get()
@@ -105,9 +106,10 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_connection__one_connection(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
+        # channel_name
         channel_name_answer = await communicator.output_queue.get()
         channel_name_json = json.loads(channel_name_answer['text'])
         channel_name = (await sync_to_async(Presence.objects.get)(user=self.user)).channel_name
@@ -115,6 +117,14 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                    'channel_name': channel_name}
         self.assertDictEqual(channel_name_json, right_channel_name_json)
 
+        # file status
+        file_status_answer = await communicator.output_queue.get()
+        file_status_json = json.loads(file_status_answer['text'])
+        right_file_status_json = {'type': 'file_status',
+                                  'is_running': False}
+        self.assertDictEqual(file_status_json, right_file_status_json)
+
+        # new user
         new_user_answer = await communicator.output_queue.get()
         answer = json.loads(new_user_answer['text'])
         right_answer = {'type': 'new_user',
@@ -125,20 +135,27 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertDictEqual(answer, right_answer)
 
     async def test_connection__two_connections_from_one_user(self):
-        encode_file_id = self.file.encode()
-
         # the first connection
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{encode_file_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
-        channel_name_answer = await communicator.output_queue.get()
 
+        # channel_name
+        channel_name_answer = await communicator.output_queue.get()
         channel_name_json = json.loads(channel_name_answer['text'])
         channel_name = (await sync_to_async(Presence.objects.get)(user=self.user)).channel_name
         right_channel_name_json = {'type': "channel_name",
                                    'channel_name': channel_name}
         self.assertDictEqual(channel_name_json, right_channel_name_json)
 
+        # file status
+        file_status_answer = await communicator.output_queue.get()
+        file_status_json = json.loads(file_status_answer['text'])
+        right_file_status_json = {'type': 'file_status',
+                                  'is_running': False}
+        self.assertDictEqual(file_status_json, right_file_status_json)
+
+        # new_user
         new_user_answer = await communicator.output_queue.get()
         answer = json.loads(new_user_answer['text'])
         right_answer = {'type': 'new_user',
@@ -150,9 +167,10 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         # the second connection
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                              f"/files/{encode_file_id}/1278/")
+                                              f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
+        # another channel_name
         another_channel_name_answer = await another_communicator.output_queue.get()
         another_channel_name_json = json.loads(another_channel_name_answer['text'])
 
@@ -163,15 +181,24 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                     'channel_name': another_channel_name}
         self.assertDictEqual(another_channel_name_json, right_another_channel_name_json)
 
+        # file status
+        file_status_answer = await another_communicator.output_queue.get()
+        file_status_json = json.loads(file_status_answer['text'])
+        right_file_status_json = {'type': 'file_status',
+                                  'is_running': False}
+        self.assertDictEqual(file_status_json, right_file_status_json)
+
+        # no new user answer
         self.assertTrue(await another_communicator.receive_nothing(1))
         self.assertEqual(2, await sync_to_async(Presence.objects.count)())  # number of connections
 
     async def test_file_info(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         await communicator.send_json_to({'type': 'file_info'})
@@ -185,10 +212,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_active_users__one_user(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         await communicator.send_json_to({'type': 'active_users'})
@@ -205,14 +233,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertDictEqual(users_answer, right_users_answer)
 
     async def test_active_users__users(self):
-        file_encode_id = self.file.encode()
-
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{file_encode_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         users_data = [{'username': 'Michael', 'email': '1@mail.ru', 'password': '1345'},
@@ -223,10 +250,9 @@ class FileEditorConsumerTestCase(TransactionTestCase):
             _ = await sync_to_async(CustomUser.objects.create_user)(**user_data)
 
             another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                         f"/files/{file_encode_id}/1278/")
+                                                         f"/files/{self.file.pk}/1278/")
             await another_communicator.connect()
-
-            _ = await communicator.output_queue.get()
+            _ = await communicator.output_queue.get()  # new user
 
         await communicator.send_json_to({'type': 'active_users'})
         active_users_answer = await communicator.output_queue.get()
@@ -242,27 +268,27 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertDictEqual(users_answer, right_users_answer)
 
     async def test_active_users__two_connections_from_one_user(self):
-        file_encode_id = self.file.encode()
-
         # the first connection
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{file_encode_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second connection
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{file_encode_id}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
 
         # active users
         await communicator.send_json_to({'type': 'active_users'})
-        active_users_answer = await communicator.output_queue.get()
 
+        active_users_answer = await communicator.output_queue.get()
         users_answer = json.loads(active_users_answer['text'])
 
         def access_to_file():
@@ -277,10 +303,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_all_users__one_user(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         await communicator.send_json_to({'type': 'all_users'})
@@ -297,22 +324,22 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertDictEqual(users_answer, right_users_answer)
 
     async def test_all_users__two_connections_from_one_user(self):
-        file_encode_id = self.file.encode()
-
         # the first connection
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{file_encode_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second connection
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{file_encode_id}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
 
         # active users
         await communicator.send_json_to({'type': 'all_users'})
@@ -333,10 +360,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
     async def test_all_users__several_users(self):
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         users_data = [{'username': 'Michael', 'email': '1@mail.ru', 'password': '1345'},
@@ -360,10 +388,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_change_file_config__change_filename(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         new_name = 'another_file_1'
@@ -381,10 +410,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_change_file_config__change_filename_and_pl(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         new_file_config = {'name': 'another_file_1',
@@ -403,10 +433,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_change_file_config__change_to_the_same_config(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         new_file_config = {'name': self.file.name,
@@ -422,10 +453,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_change_file_config__change_nothing(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         await communicator.send_json_to({'type': 'change_file_config',
@@ -439,10 +471,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_change_link_access(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         new_access = Access.EDITOR
@@ -461,10 +494,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
     async def test_change_user_access__cannot_change_user_access(self):
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second user connect
@@ -472,10 +506,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
 
         # the second user try to change the first user access
@@ -485,8 +520,9 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         change_user_access_answer = await another_communicator.output_queue.get()
         change_access_answer = json.loads(change_user_access_answer['text'])
-        right_change_access_answer = {'type': 'error',
-                                      'code': 4403}
+        right_change_access_answer = {'type': 'change_user_access',
+                                      'error_code': 4403,
+                                      'message': ''}
         self.assertDictEqual(change_access_answer, right_change_access_answer)
 
     async def test_change_user_access__cannot_change_to_this_access(self):
@@ -499,10 +535,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second user connect
@@ -510,10 +547,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
 
         # the second user try to change the first user access
@@ -523,17 +561,19 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         change_user_access_answer = await another_communicator.output_queue.get()
         change_access_answer = json.loads(change_user_access_answer['text'])
-        right_change_access_answer = {'type': 'error',
-                                      'code': 4406}
+        right_change_access_answer = {'type': 'change_user_access',
+                                      'error_code': 4406,
+                                      'message': ''}
         self.assertDictEqual(change_access_answer, right_change_access_answer)
 
     async def test_change_user_access__oks(self):
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second user connect
@@ -541,10 +581,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                            email='1@mail.ru',
                                                                            password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{self.file.encode()}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
 
         await communicator.send_json_to({'type': 'change_user_access',
@@ -563,10 +604,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_apply_operation__one_operation(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{self.file.encode()}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         operation = {'type': Operations.Type.INSERT,
@@ -596,14 +638,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         await sync_to_async(check_operation)()
 
     async def test_apply_operation__several_operations(self):
-        encode_file_id = self.file.encode()
-
         # the first connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{encode_file_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         self.file.link_access = Access.EDITOR
@@ -614,12 +655,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{encode_file_id}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
-        _ = await communicator.output_queue.get()
+        _ = await communicator.output_queue.get()  # new_user
 
         operation1 = {'type': Operations.Type.INSERT,
                      'position': 0,
@@ -665,14 +707,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         await sync_to_async(check_result)()
 
     async def test_apply_operation__owner_and_viewer(self):
-        encode_file_id = self.file.encode()
-
         # the first connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{encode_file_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second_connect
@@ -680,10 +721,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{encode_file_id}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
         _ = await communicator.output_queue.get()  # new_user
 
@@ -732,14 +774,13 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         await sync_to_async(check_result)()
 
     async def test_change_cursor_position(self):
-        encode_file_id = self.file.encode()
-
         # the first connection
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/{encode_file_id}/1278/")
+                                             f"/files/{self.file.pk}/1278/")
         await communicator.connect()
 
         _ = await communicator.output_queue.get()  # channel_name
+        _ = await communicator.output_queue.get()  # file_status
         _ = await communicator.output_queue.get()  # new_user
 
         # the second_connect
@@ -747,10 +788,11 @@ class FileEditorConsumerTestCase(TransactionTestCase):
                                                                 email='1@mail.ru',
                                                                 password='15')
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                                     f"/files/{encode_file_id}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         _ = await another_communicator.output_queue.get()  # channel_name
+        _ = await another_communicator.output_queue.get()  # file_status
         _ = await another_communicator.output_queue.get()  # new_user
         _ = await communicator.output_queue.get()  # new_user
 

@@ -54,6 +54,7 @@ class CreateFileTestCase(TestCase):
                                                       email='134@mail.ru',
                                                       password='12gh345')
         another_client.force_authenticate(user=another_user)
+
         file = File.objects.last()
         UserFiles.objects.create(user=another_user, file=file, access=Access.EDITOR)
 
@@ -63,10 +64,9 @@ class CreateFileTestCase(TestCase):
         response = another_client.post('/file/create_file/', another_file)
 
         create_file_response = json.loads(response.content)
-        new_file = File.objects.last()
-        right_create_file_response = FileWithoutContentSerializer(new_file).data
-        self.assertDictEqual(create_file_response, right_create_file_response)
+        self.assertTrue(File.objects.filter(**create_file_response).exists())
 
+        new_file = File.objects.get(**create_file_response)
         self.assertTrue(UserFiles.objects.filter(user=self.user, file=new_file, access=Access.EDITOR).exists())
         self.assertTrue(UserFiles.objects.filter(user=another_user, file=new_file, access=Access.OWNER).exists())
 
@@ -203,7 +203,7 @@ class LeaveFileTestCase(TestCase):
         CustomUser.objects.all().delete()
 
     def test_no_such_file(self):
-        response = self.client.post('/file/leave_file/', {'file_id': self.file.pk + 1})
+        response = self.client.post('/file/leave_file/', {'file_id': 'l'})
         self.assertContains(response, 'You must be ANY that to do this', status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
     def test_owner_leave_file(self):

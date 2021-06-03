@@ -244,7 +244,6 @@ class FileEditorConsumer(JsonWebsocketConsumer):
     @remove_presence
     def disconnect(self, code):
         # leave room
-        print('In disconnect')
         if not Presence.objects.filter(user=self.scope['user'], room=self.room).exists():
             user_serializer = UserSerializer(self.scope['user'])
             self.send_to_group({'type': 'delete_user',
