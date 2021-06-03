@@ -23,7 +23,7 @@ def create_file(request):
                                    request.user,
                                    request.data.get('prev_file_id'))
     serializer = FileWithoutContentSerializer(file)
-    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+    return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @csrf_exempt
@@ -34,7 +34,7 @@ def delete_file(request):
     try:
         FileManager.delete_file(request.data['file_id'],
                                 request.user)
-        return HttpResponse(status=status.HTTP_200_OK)
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except FileManageException as e:
         return HttpResponse(content=e.message, status=e.response_status)
 
@@ -69,6 +69,6 @@ def leave_file(request):
     try:
         FileManager.leave_file(request.data['file_id'],
                                request.user)
-        return HttpResponse(status=status.HTTP_200_OK)
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except FileManageException as e:
         return HttpResponse(content=e.message, status=e.response_status)

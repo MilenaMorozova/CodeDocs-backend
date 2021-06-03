@@ -12,7 +12,7 @@ class CheckUsername(TestCase):
 
     def test_username_is_unique(self):
         response = self.client.post('/auth/check_username/', {'username': 'Igor Mashtakov'})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_username_already_exist(self):
         auth_backend = AuthBackend()
@@ -30,7 +30,7 @@ class CheckEmail(TestCase):
 
     def test_email_is_unique(self):
         response = self.client.post('/auth/check_email/', {'email': 'masht@mail.ru'})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_email_already_exist(self):
         auth_backend = AuthBackend()

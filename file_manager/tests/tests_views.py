@@ -29,7 +29,7 @@ class CreateFileTestCase(TestCase):
         file_params = {'name': "file_1",
                        'programming_language': "python"}
         response = self.client.post('/file/create_file/', file_params)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertTrue(File.objects.filter(**file_params).exists())
 
@@ -87,7 +87,7 @@ class MyFilesTestCase(TestCase):
 
     def test_no_files(self):
         response = self.client.get('/file/my')
-        self.assertContains(response, "[]")
+        self.assertContains(response, "[]", status_code=status.HTTP_200_OK)
 
     def test_files_exist(self):
         file_params = {'name': "file_1",
@@ -129,7 +129,7 @@ class DeleteFileTestsCase(TestCase):
         _ = self.client.post('/file/create_file/', file_params)
 
         response = self.client.post('/file/delete_file/', {'file_id': self.user.files.get().pk})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_no_owner(self):
         file_params = {'name': "file_1",
@@ -217,4 +217,4 @@ class LeaveFileTestCase(TestCase):
         user_file_relation.save()
 
         response = self.client.post('/file/leave_file/', {'file_id': self.file.pk})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
