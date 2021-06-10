@@ -36,7 +36,7 @@ class RunFileThread(threading.Thread):
 
     def delete_file(self):
         try:
-            run_file_logger.info(f"delete_file")
+            run_file_logger.info("delete_file")
             os.remove(self.filename)
         except OSError:
             run_file_logger.info("file was deleted")
