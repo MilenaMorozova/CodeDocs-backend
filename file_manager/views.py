@@ -5,14 +5,12 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 
 from helpers.helper import catch_view_exception
-from helpers.logger import create_logger
+from .logger import file_manager_logger
 from .file_manager_backend import FileManager
 from .exceptions import FileManageException
 from .serializers import (
     UserFilesSerializer, FileWithoutContentSerializer
 )
-
-file_manager_logger = create_logger('file_manager_logger')
 
 
 @csrf_exempt
@@ -25,7 +23,7 @@ def create_file(request):
                                    request.user,
                                    request.data.get('prev_file_id'))
     serializer = FileWithoutContentSerializer(file)
-    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+    return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @csrf_exempt
@@ -36,7 +34,7 @@ def delete_file(request):
     try:
         FileManager.delete_file(request.data['file_id'],
                                 request.user)
-        return HttpResponse(status=status.HTTP_200_OK)
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except FileManageException as e:
         return HttpResponse(content=e.message, status=e.response_status)
 
@@ -71,6 +69,6 @@ def leave_file(request):
     try:
         FileManager.leave_file(request.data['file_id'],
                                request.user)
-        return HttpResponse(status=status.HTTP_200_OK)
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except FileManageException as e:
         return HttpResponse(content=e.message, status=e.response_status)

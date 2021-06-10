@@ -45,7 +45,7 @@ class DeleteFileTestCase(TestCase):
 
     def test_no_such_file(self):
         with self.assertRaises(FileDoesNotExistException):
-            FileManager.delete_file(file_id=1, user=self.user)
+            FileManager.delete_file(file_id=-1, user=self.user)
 
     def test_no_owner(self):
         file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)
@@ -89,7 +89,7 @@ class GenerateLinkTestCase(TestCase):
 
     def test_file_no_exist(self):
         with self.assertRaises(FileDoesNotExistException):
-            FileManager.generate_link(1)
+            FileManager.generate_link(-1)
 
     def test_file_exist(self):
         file = FileManager.create_file(name="file_1", programming_language="python", owner=self.user)

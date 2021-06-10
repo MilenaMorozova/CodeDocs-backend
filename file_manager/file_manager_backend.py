@@ -15,6 +15,7 @@ class FileManager:
                                  user=owner,
                                  access=Access.OWNER)
 
+        # inherit the user's relationship with the previous file
         if prev_file_id:
             participants = []
             for access_to_file in UserFiles.objects.filter(file__id=prev_file_id).all():

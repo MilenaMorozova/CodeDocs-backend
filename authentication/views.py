@@ -16,8 +16,8 @@ auth_backend = AuthBackend()
 @catch_view_exception(['username'], auth_logger)
 def check_username(request):
     try:
-        auth_backend.is_correct_username(request.data['username'])
-        return HttpResponse(status=status.HTTP_200_OK)
+        auth_backend.is_unique_username(request.data['username'])
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)
 
@@ -27,7 +27,7 @@ def check_username(request):
 @catch_view_exception(['email'], auth_logger)
 def check_email(request):
     try:
-        auth_backend.is_correct_email(request.data['email'])
-        return HttpResponse(status=status.HTTP_200_OK)
+        auth_backend.is_unique_email(request.data['email'])
+        return HttpResponse(status=status.HTTP_204_NO_CONTENT)
     except AuthenticationException as e:
         return HttpResponse(content=e.message, status=e.response_status)

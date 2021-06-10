@@ -4,9 +4,14 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 
 from helpers.helper import catch_view_exception
-from helpers.logger import create_logger
 
-test_logger = create_logger('test_helper')
+
+class TestLogger:
+    def error(self, error):
+        pass
+
+
+test_logger = TestLogger()
 
 
 @api_view(['POST'])

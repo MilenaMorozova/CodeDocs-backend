@@ -9,10 +9,6 @@ class OperationFactory:
         Operations.Type.DELETE: lambda position, text: Delete(position, text)
     }
 
-    bd_operations = {
-
-    }
-
     @staticmethod
     def create(type_operation, position, text):
         return OperationFactory.operations[type_operation](position, text)
