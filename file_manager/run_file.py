@@ -49,11 +49,10 @@ class RunFileThread(threading.Thread):
 
     def run(self) -> None:
         # run_file_logger.info("start RunFileThread")
-        program = ['docker', 'run', '--mount',
-                    f'type=bind,source={self.filename},destination=/root/my_file,readonly', '--rm', '-it',
-                    self.docker_image]
-        command = ' '.join(program)
-
+        command = f'docker run ' \
+                  f'--mount type=bind,source={self.filename},destination=/root/my_file,readonly ' \
+                  f'--rm -it {self.docker_image}'
+        
         child = pexpect.spawn(command, encoding='utf-8')
         child.timeout = 1
         child.delimiter = pexpect.TIMEOUT
