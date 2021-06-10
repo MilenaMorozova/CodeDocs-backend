@@ -36,19 +36,19 @@ class RunFileThread(threading.Thread):
 
     def delete_file(self):
         try:
-            # run_file_logger.info(f"delete_file")
+            run_file_logger.info(f"delete_file")
             os.remove(self.filename)
         except OSError:
-            # run_file_logger.info("file was deleted")
+            run_file_logger.info("file was deleted")
             pass
 
     def add_input(self, file_input):
-        # run_file_logger.info(f"ADD INPUT {file_input}")
+        run_file_logger.info(f"ADD INPUT {file_input}")
         self.inputs.append(file_input)
-        # run_file_logger.info(f"INPUTS NOW {self.inputs}")
+        run_file_logger.info(f"INPUTS NOW {self.inputs}")
 
     def run(self) -> None:
-        # run_file_logger.info("start RunFileThread")
+        run_file_logger.info("start RunFileThread")
         command = f'docker run ' \
                   f'--mount type=bind,source={self.filename},destination=/root/my_file,readonly ' \
                   f'--rm -it {self.docker_image}'
@@ -56,17 +56,16 @@ class RunFileThread(threading.Thread):
         child = pexpect.spawn(command, encoding='utf-8')
         child.timeout = 1
         child.delimiter = pexpect.TIMEOUT
-        # run_file_logger.info("create process")
         try:
             while True:
                 # force process to stop
                 if self.__close_force:
-                    # run_file_logger.info("force close child")
+                    run_file_logger.info("force close child")
                     child.close(force=True)
                     break
 
                 if self.inputs:
-                    # run_file_logger.info(f"before send input - {self.inputs[-1]}")
+                    run_file_logger.info(f"before send input - {self.inputs[-1]}")
                     child.sendline(self.inputs.pop(0))
 
                 try:
