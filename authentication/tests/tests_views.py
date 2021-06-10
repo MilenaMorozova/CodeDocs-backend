@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.test import Client, TestCase
 from rest_framework import status
 

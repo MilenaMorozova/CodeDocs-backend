@@ -55,7 +55,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
     async def test_connection__file_does_not_exist(self):
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                             f"/files/yuyu/1278/")
+                                             "/files/yuyu/1278/")
         await communicator.connect()
 
         answer = await communicator.output_queue.get()
@@ -167,7 +167,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
 
         # the second connection
         another_communicator = WebsocketCommunicator(application.application_mapping["websocket"],
-                                              f"/files/{self.file.pk}/1278/")
+                                                     f"/files/{self.file.pk}/1278/")
         await another_communicator.connect()
 
         # another channel_name
@@ -178,7 +178,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
             return Presence.objects.filter(user=self.user).last().channel_name
         another_channel_name = await sync_to_async(get_last_presence)()
         right_another_channel_name_json = {'type': "channel_name",
-                                    'channel_name': another_channel_name}
+                                           'channel_name': another_channel_name}
         self.assertDictEqual(another_channel_name_json, right_another_channel_name_json)
 
         # file status
@@ -664,14 +664,14 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         _ = await communicator.output_queue.get()  # new_user
 
         operation1 = {'type': Operations.Type.INSERT,
-                     'position': 0,
-                     'text': "Hello!"}
+                      'position': 0,
+                      'text': "Hello!"}
         operation2 = {'type': Operations.Type.INSERT,
-                     'position': 5,
-                     'text': " World!"}
+                      'position': 5,
+                      'text': " World!"}
         operation3 = {'type': Operations.Type.DELETE,
-                     'position': 0,
-                     'text': "He"}
+                      'position': 0,
+                      'text': "He"}
         operation4 = {'type': Operations.Type.NEU,
                       'position': None,
                       'text': None}

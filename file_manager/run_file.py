@@ -41,7 +41,7 @@ class RunFileThread(threading.Thread):
         except OSError:
             # run_file_logger.info("file was deleted")
             pass
-        
+
     def add_input(self, file_input):
         # run_file_logger.info(f"ADD INPUT {file_input}")
         self.inputs.append(file_input)
@@ -52,7 +52,7 @@ class RunFileThread(threading.Thread):
         command = f'docker run ' \
                   f'--mount type=bind,source={self.filename},destination=/root/my_file,readonly ' \
                   f'--rm -it {self.docker_image}'
-        
+
         child = pexpect.spawn(command, encoding='utf-8')
         child.timeout = 1
         child.delimiter = pexpect.TIMEOUT
@@ -68,11 +68,11 @@ class RunFileThread(threading.Thread):
                 if self.inputs:
                     # run_file_logger.info(f"before send input - {self.inputs[-1]}")
                     child.sendline(self.inputs.pop(0))
-                
+
                 try:
                     output = child.readline()
                     if child.after == pexpect.TIMEOUT:
-                        run_file_logger.info(f"in if")
+                        # run_file_logger.info("in if")
                         output = child.read(len(child.before))
                     if output:
                         self.consumer.file_output(output)

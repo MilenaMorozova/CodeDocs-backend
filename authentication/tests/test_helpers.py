@@ -1,5 +1,3 @@
-import os
-
 from django.http import HttpResponse
 from django.test import TestCase, RequestFactory
 from rest_framework.decorators import api_view
