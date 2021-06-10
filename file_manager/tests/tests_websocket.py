@@ -233,6 +233,7 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         self.assertDictEqual(users_answer, right_users_answer)
 
     async def test_active_users__users(self):
+        self.maxDiff = None
         # the first user connect
         communicator = WebsocketCommunicator(application.application_mapping["websocket"],
                                              f"/files/{self.file.pk}/1278/")
@@ -265,6 +266,10 @@ class FileEditorConsumerTestCase(TransactionTestCase):
         active_users = await sync_to_async(serialized_active_users)()
         right_users_answer = {'type': "active_users",
                               'users': active_users}
+        print('users_answer')
+        print(users_answer)
+        print('right users answer')
+        print(right_users_answer)
         self.assertDictEqual(users_answer, right_users_answer)
 
     async def test_active_users__two_connections_from_one_user(self):
